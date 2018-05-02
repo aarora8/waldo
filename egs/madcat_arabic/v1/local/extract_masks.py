@@ -396,18 +396,6 @@ def if_previous_b_b_smaller_than_curr_b_b(b_b_p, b_b_c):
         return False
 
 
-def check_if_point_inside_b_b(bounding_box, point):
-    g_b_b1, g_b_b2, g_b_b3, g_b_b4 = bounding_box.corner_points
-    x1, y1 = g_b_b1
-    x2, y2 = g_b_b2
-    x3, y3 = g_b_b3
-    x4, y4 = g_b_b4
-    g_b_bmin_x = int(min(x1, x2, x3, x4))
-    g_b_bmin_y = int(min(y1, y2, y3, y4))
-    g_b_bmax_x = int(max(x1, x2, x3, x4))
-    g_b_bmax_y = int(max(y1, y2, y3, y4))
-
-
 def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_data):
     """ Given a page image, extracts the page image mask from it.
         Input
@@ -433,10 +421,7 @@ def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_dat
         bounding_box_list.append(bounding_box)
 
     for index in range(0, len(bounding_box_list)):
-        line_id = '_' + str(index).zfill(4)
-        line_image_file_name = base_name + line_id + '.tif'
         bounding_box = bounding_box_list[index]
-        previous_bounding_box = None
         if index == len(bounding_box_list)-1:
             previous_bounding_box = bounding_box_list[len(bounding_box_list)-2]
         else:
@@ -445,6 +430,7 @@ def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_dat
         if_previous_smaller_than_curr = \
             if_previous_b_b_smaller_than_curr_b_b(previous_bounding_box, bounding_box)
 
+        val_old = val
         lst = list(val)
         lst[0] += 5
         lst[1] += 5
@@ -496,6 +482,8 @@ def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_dat
                 rel_x_old, rel_y_old = \
                 rotate_single_point(point, cropped_bounding_box, (b_bwidth_half_x, b_bheight_half_y), True)
                 g_x_y_old = (rel_x_old + g_b_bmin_x, rel_y_old + g_b_bmin_y)
+                if pixels[int(g_x_y_old[0]), int(g_x_y_old[1])] == val_old and if_previous_smaller_than_curr:
+                    continue
                 pixels[int(g_x_y_old[0]), int(g_x_y_old[1])] = val
 
     set_line_image_data(img, image_file_name, image_fh)
@@ -524,62 +512,10 @@ def get_bounding_box(image_file_name, madcat_file_path):
         updated_mbb_input = update_minimum_bounding_box_input(minimum_bounding_box_input)
         bounding_box = minimum_bounding_box(updated_mbb_input)
 
-        g_b_b1, g_b_b2, g_b_b3, g_b_b4 = bounding_box.corner_points
-        x1, y1 = g_b_b1
-        x2, y2 = g_b_b2
-        x3, y3 = g_b_b3
-        x4, y4 = g_b_b4
-        g_b_bmin_x = int(min(x1, x2, x3, x4))
-        g_b_bmin_y = int(min(y1, y2, y3, y4))
-        g_b_bmax_x = int(max(x1, x2, x3, x4))
-        g_b_bmax_y = int(max(y1, y2, y3, y4))
-        b_bwidth_half_x = (g_b_bmax_x - g_b_bmin_x) / 2
-        b_bheight_half_y = (g_b_bmax_y - g_b_bmin_y) / 2
-
-        rel_b_b1 = (x1 - g_b_bmin_x, y1 - g_b_bmin_y)
-        rel_b_b2 = (x2 - g_b_bmin_x, y2 - g_b_bmin_y)
-        rel_b_b3 = (x3 - g_b_bmin_x, y3 - g_b_bmin_y)
-        rel_b_b4 = (x4 - g_b_bmin_x, y4 - g_b_bmin_y)
-
-        rel_points = []
-        rel_points.append(rel_b_b1)
-        rel_points.append(rel_b_b2)
-        rel_points.append(rel_b_b3)
-        rel_points.append(rel_b_b4)
-        cropped_bounding_box = bounding_box_tuple(bounding_box.area,
-                                                  bounding_box.length_parallel,
-                                                  bounding_box.length_orthogonal,
-                                                  bounding_box.length_orthogonal,
-                                                  bounding_box.unit_vector,
-                                                  bounding_box.unit_vector_angle,
-                                                  set(rel_points),
-                                                  bounding_box.rotated_corner_points
-                                                  )
-
-        (rel_rot_x1, rel_rot_y1), (rel_rot_x2, rel_rot_y2), (rel_rot_x3, rel_rot_y3), \
-        (rel_rot_x4, rel_rot_y4) = \
-            rotate_rectangle_corners(cropped_bounding_box, (b_bwidth_half_x, b_bheight_half_y))
-
-        rot_points = list()
-        rot_points.append((rel_rot_x1, rel_rot_y1))
-        rot_points.append((rel_rot_x2, rel_rot_y2))
-        rot_points.append((rel_rot_x3, rel_rot_y3))
-        rot_points.append((rel_rot_x4, rel_rot_y4))
-
-        new_bounding_box = bounding_box_tuple(bounding_box.area,
-                                                  bounding_box.length_parallel,
-                                                  bounding_box.length_orthogonal,
-                                                  bounding_box.length_orthogonal,
-                                                  bounding_box.unit_vector,
-                                                  bounding_box.unit_vector_angle,
-                                                  bounding_box.corner_points,
-                                                  set(rot_points),
-                                                  )
-
         base_name = os.path.splitext(os.path.basename(image_file_name))[0]
         line_id = '_' + id.zfill(4)
         line_image_file_name = base_name + line_id + '.tif'
-        mydata[line_image_file_name] = new_bounding_box
+        mydata[line_image_file_name] = bounding_box
     return mydata
 
 
