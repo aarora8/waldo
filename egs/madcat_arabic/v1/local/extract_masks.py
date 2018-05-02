@@ -201,7 +201,6 @@ def minimum_bounding_box(points):
     unit_vector_angle: angle of the unit vector
     corner_points: set that contains the corners of the rectangle
     """
-
     if len(points) <= 2: raise ValueError('More than two points required.')
 
     hull_ordered = [points[index] for index in ConvexHull(points).vertices]
@@ -247,7 +246,8 @@ def pad_image(image):
     -------
     image: page image
     """
-    padded_image = Image.new('RGB', (image.size[0] + padding, image.size[1] + padding), "white")
+    offset = int(args.padding // 2)
+    padded_image = Image.new('RGB', (image.size[0] + int(args.padding), image.size[1] + int(args.padding)), "white")
     padded_image.paste(im=image, box=(offset, offset))
     return padded_image
 
@@ -259,6 +259,7 @@ def update_minimum_bounding_box_input(bounding_box_input):
     points [(float, float)]: points, a list or tuple of 2D coordinates
     """
     updated_minimum_bounding_box_input = []
+    offset = int(args.padding // 2)
     for point in bounding_box_input:
         x, y = point
         new_x = x + offset
@@ -269,14 +270,13 @@ def update_minimum_bounding_box_input(bounding_box_input):
     return updated_minimum_bounding_box_input
 
 
-def set_line_image_data(image, image_file_name):
+def set_line_image_data(image, image_file_name, image_fh):
     """ Given an image, saves a flipped line image. Line image file name
             is formed by appending the line id at the end page image name.
         """
-
     base_name = os.path.splitext(os.path.basename(image_file_name))[0]
     line_image_file_name = base_name + '.tif'
-    image_path = os.path.join(output_directory, line_image_file_name)
+    image_path = os.path.join(args.out_dir, line_image_file_name)
     imgray = image.convert('L')
     imgray.save(image_path)
     image_fh.write(image_path + '\n')
@@ -374,7 +374,7 @@ def rotate_single_point(point, bounding_box, center, if_opposite_direction=False
     return x_dash_1, y_dash_1
 
 
-def get_mask_from_page_image(image_file_name, madcat_file_path):
+def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh):
     """ Given a page image, extracts the page image mask from it.
         Input
         -----
@@ -406,28 +406,28 @@ def get_mask_from_page_image(image_file_name, madcat_file_path):
         updated_mbb_input = update_minimum_bounding_box_input(minimum_bounding_box_input)
         bounding_box = minimum_bounding_box(updated_mbb_input)
 
-        g_b_b_c1, g_b_b_c2, g_b_b_c3, g_b_b_c4 = bounding_box.corner_points
-        x1, y1 = g_b_b_c1
-        x2, y2 = g_b_b_c2
-        x3, y3 = g_b_b_c3
-        x4, y4 = g_b_b_c4
-        g_b_b_cmin_x = int(min(x1, x2, x3, x4))
-        g_b_b_cmin_y = int(min(y1, y2, y3, y4))
-        g_b_b_cmax_x = int(max(x1, x2, x3, x4))
-        g_b_b_cmax_y = int(max(y1, y2, y3, y4))
-        b_bwidth_half_x = (g_b_b_cmax_x - g_b_b_cmin_x) / 2
-        b_bheight_half_y = (g_b_b_cmax_y - g_b_b_cmin_y) / 2
+        g_b_b1, g_b_b2, g_b_b3, g_b_b4 = bounding_box.corner_points
+        x1, y1 = g_b_b1
+        x2, y2 = g_b_b2
+        x3, y3 = g_b_b3
+        x4, y4 = g_b_b4
+        g_b_bmin_x = int(min(x1, x2, x3, x4))
+        g_b_bmin_y = int(min(y1, y2, y3, y4))
+        g_b_bmax_x = int(max(x1, x2, x3, x4))
+        g_b_bmax_y = int(max(y1, y2, y3, y4))
+        b_bwidth_half_x = (g_b_bmax_x - g_b_bmin_x) / 2
+        b_bheight_half_y = (g_b_bmax_y - g_b_bmin_y) / 2
 
-        rel_b_b_c1 = (x1 - g_b_b_cmin_x, y1 - g_b_b_cmin_y)
-        rel_b_b_c2 = (x2 - g_b_b_cmin_x, y2 - g_b_b_cmin_y)
-        rel_b_b_c3 = (x3 - g_b_b_cmin_x, y3 - g_b_b_cmin_y)
-        rel_b_b_c4 = (x4 - g_b_b_cmin_x, y4 - g_b_b_cmin_y)
+        rel_b_b1 = (x1 - g_b_bmin_x, y1 - g_b_bmin_y)
+        rel_b_b2 = (x2 - g_b_bmin_x, y2 - g_b_bmin_y)
+        rel_b_b3 = (x3 - g_b_bmin_x, y3 - g_b_bmin_y)
+        rel_b_b4 = (x4 - g_b_bmin_x, y4 - g_b_bmin_y)
 
         rel_points = []
-        rel_points.append(rel_b_b_c1)
-        rel_points.append(rel_b_b_c2)
-        rel_points.append(rel_b_b_c3)
-        rel_points.append(rel_b_b_c4)
+        rel_points.append(rel_b_b1)
+        rel_points.append(rel_b_b2)
+        rel_points.append(rel_b_b3)
+        rel_points.append(rel_b_b4)
         cropped_bounding_box = bounding_box_tuple(bounding_box.area,
                                                   bounding_box.length_parallel,
                                                   bounding_box.length_orthogonal,
@@ -436,24 +436,26 @@ def get_mask_from_page_image(image_file_name, madcat_file_path):
                                                   bounding_box.unit_vector_angle,
                                                   set(rel_points)
                                                   )
-        (rot_x1, rot_y1), (rot_x2, rot_y2), (rot_x3, rot_y3), (rot_x4, rot_y4) = rotate_rectangle_corners(
-            cropped_bounding_box, (b_bwidth_half_x, b_bheight_half_y))
-        rot_b_b_cmin_x = int(min(rot_x1, rot_x2, rot_x3, rot_x4))
-        rot_b_b_cmin_y = int(min(rot_y1, rot_y2, rot_y3, rot_y4))
-        rot_b_b_cmax_x = int(max(rot_x1, rot_x2, rot_x3, rot_x4))
-        rot_b_b_cmax_y = int(max(rot_y1, rot_y2, rot_y3, rot_y4))
+        (rel_rot_x1, rel_rot_y1), (rel_rot_x2, rel_rot_y2), (rel_rot_x3, rel_rot_y3),\
+        (rel_rot_x4, rel_rot_y4) = \
+        rotate_rectangle_corners(cropped_bounding_box, (b_bwidth_half_x, b_bheight_half_y))
+        rel_rot_b_bmin_x = int(min(rel_rot_x1, rel_rot_x2, rel_rot_x3, rel_rot_x4))
+        rel_rot_b_bmin_y = int(min(rel_rot_y1, rel_rot_y2, rel_rot_y3, rel_rot_y4))
+        rel_rot_b_bmax_x = int(max(rel_rot_x1, rel_rot_x2, rel_rot_x3, rel_rot_x4))
+        rel_rot_b_bmax_y = int(max(rel_rot_y1, rel_rot_y2, rel_rot_y3, rel_rot_y4))
 
-        for x in range(rot_b_b_cmin_x,rot_b_b_cmax_x):
-            for y in range(rot_b_b_cmin_y, rot_b_b_cmax_y):
-                point = x, y
-                x1, y1 = rotate_single_point(point, cropped_bounding_box, (b_bwidth_half_x, b_bheight_half_y), True)
-                g_b_b_c1_old = (x1 + g_b_b_cmin_x, y1 + g_b_b_cmin_y)
-                pixels[int(g_b_b_c1_old[0]), int(g_b_b_c1_old[1])] = val
+        for rel_rot_x in range(rel_rot_b_bmin_x,rel_rot_b_bmax_x):
+            for rel_rot_y in range(rel_rot_b_bmin_y, rel_rot_b_bmax_y):
+                point = rel_rot_x, rel_rot_y
+                rel_x_old, rel_y_old = \
+                rotate_single_point(point, cropped_bounding_box, (b_bwidth_half_x, b_bheight_half_y), True)
+                g_x_y_old = (rel_x_old + g_b_bmin_x, rel_y_old + g_b_bmin_y)
+                pixels[int(g_x_y_old[0]), int(g_x_y_old[1])] = val
 
-    set_line_image_data(img, image_file_name)
+    set_line_image_data(img, image_file_name, image_fh)
 
 
-def check_file_location():
+def check_file_location(base_name, wc_dict1, wc_dict2, wc_dict3):
     """ Returns the complete path of the page image and corresponding
         xml file.
     Returns
@@ -462,13 +464,13 @@ def check_file_location():
     madcat_file_path (string): complete path and name of the madcat xml file
                                corresponding to the page image.
     """
-    madcat_file_path1 = os.path.join(data_path1, 'madcat', base_name + '.madcat.xml')
-    madcat_file_path2 = os.path.join(data_path2, 'madcat', base_name + '.madcat.xml')
-    madcat_file_path3 = os.path.join(data_path3, 'madcat', base_name + '.madcat.xml')
+    madcat_file_path1 = os.path.join(args.database_path1, 'madcat', base_name + '.madcat.xml')
+    madcat_file_path2 = os.path.join(args.database_path2, 'madcat', base_name + '.madcat.xml')
+    madcat_file_path3 = os.path.join(args.database_path3, 'madcat', base_name + '.madcat.xml')
 
-    image_file_path1 = os.path.join(data_path1, 'images', base_name + '.tif')
-    image_file_path2 = os.path.join(data_path2, 'images', base_name + '.tif')
-    image_file_path3 = os.path.join(data_path3, 'images', base_name + '.tif')
+    image_file_path1 = os.path.join(args.database_path1, 'images', base_name + '.tif')
+    image_file_path2 = os.path.join(args.database_path2, 'images', base_name + '.tif')
+    image_file_path3 = os.path.join(args.database_path3, 'images', base_name + '.tif')
 
     if os.path.exists(madcat_file_path1):
         return madcat_file_path1, image_file_path1, wc_dict1
@@ -480,7 +482,6 @@ def check_file_location():
         return madcat_file_path3, image_file_path3, wc_dict3
 
     return None, None, None
-
 
 def parse_writing_conditions(writing_conditions):
     """ Given writing condition file path, returns a dictionary which have writing condition
@@ -495,7 +496,6 @@ def parse_writing_conditions(writing_conditions):
             line_list = line.strip().split("\t")
             file_writing_cond[line_list[0]] = line_list[3]
     return file_writing_cond
-
 
 def check_writing_condition(wc_dict):
     """ Given writing condition dictionary, checks if a page image is writing
@@ -514,45 +514,42 @@ def check_writing_condition(wc_dict):
 
 ### main ###
 
-data_path1 = args.database_path1
-data_path2 = args.database_path2
-data_path3 = args.database_path3
+def main():
 
-writing_condition_folder_list = args.database_path1.split('/')
-writing_condition_folder1 = ('/').join(writing_condition_folder_list[:5])
+    writing_condition_folder_list = args.database_path1.split('/')
+    writing_condition_folder1 = ('/').join(writing_condition_folder_list[:5])
 
-writing_condition_folder_list = args.database_path2.split('/')
-writing_condition_folder2 = ('/').join(writing_condition_folder_list[:5])
+    writing_condition_folder_list = args.database_path2.split('/')
+    writing_condition_folder2 = ('/').join(writing_condition_folder_list[:5])
 
-writing_condition_folder_list = args.database_path3.split('/')
-writing_condition_folder3 = ('/').join(writing_condition_folder_list[:5])
+    writing_condition_folder_list = args.database_path3.split('/')
+    writing_condition_folder3 = ('/').join(writing_condition_folder_list[:5])
 
-splits_handle = open(args.data_splits, 'r')
-splits_data = splits_handle.read().strip().split('\n')
+    writing_conditions1 = os.path.join(writing_condition_folder1, 'docs', 'writing_conditions.tab')
+    writing_conditions2 = os.path.join(writing_condition_folder2, 'docs', 'writing_conditions.tab')
+    writing_conditions3 = os.path.join(writing_condition_folder3, 'docs', 'writing_conditions.tab')
 
-padding = int(args.padding)
-offset = int(padding // 2)
+    wc_dict1 = parse_writing_conditions(writing_conditions1)
+    wc_dict2 = parse_writing_conditions(writing_conditions2)
+    wc_dict3 = parse_writing_conditions(writing_conditions3)
 
-output_directory = args.out_dir
-image_file = os.path.join(output_directory, 'images.scp')
-image_fh = open(image_file, 'w', encoding='utf-8')
+    output_directory = args.out_dir
+    image_file = os.path.join(output_directory, 'images.scp')
+    image_fh = open(image_file, 'w', encoding='utf-8')
 
-writing_conditions1 = os.path.join(writing_condition_folder1, 'docs', 'writing_conditions.tab')
-writing_conditions2 = os.path.join(writing_condition_folder2, 'docs', 'writing_conditions.tab')
-writing_conditions3 = os.path.join(writing_condition_folder3, 'docs', 'writing_conditions.tab')
+    splits_handle = open(args.data_splits, 'r')
+    splits_data = splits_handle.read().strip().split('\n')
+    prev_base_name = ''
+    for line in splits_data:
+        base_name = os.path.splitext(os.path.splitext(line.split(' ')[0])[0])[0]
+        if prev_base_name != base_name:
+            prev_base_name = base_name
+            madcat_file_path, image_file_path, wc_dict = check_file_location(base_name, wc_dict1, wc_dict2, wc_dict3)
+            if wc_dict is None or not check_writing_condition(wc_dict):
+                continue
+            if madcat_file_path is not None:
+                get_mask_from_page_image(image_file_path, madcat_file_path, image_fh)
 
-wc_dict1 = parse_writing_conditions(writing_conditions1)
-wc_dict2 = parse_writing_conditions(writing_conditions2)
-wc_dict3 = parse_writing_conditions(writing_conditions3)
 
-
-prev_base_name = ''
-for line in splits_data:
-    base_name = os.path.splitext(os.path.splitext(line.split(' ')[0])[0])[0]
-    if prev_base_name != base_name:
-        prev_base_name = base_name
-        madcat_file_path, image_file_path, wc_dict = check_file_location()
-        if wc_dict == None or not check_writing_condition(wc_dict):
-            continue
-        if madcat_file_path != None:
-            get_mask_from_page_image(image_file_path, madcat_file_path)
+if __name__ == '__main__':
+      main()
