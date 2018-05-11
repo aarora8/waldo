@@ -20,14 +20,13 @@ import argparse
 import os
 import xml.dom.minidom as minidom
 import numpy as np
-from math import atan2, cos, sin, pi, degrees, sqrt
+from math import atan2, cos, sin, pi, sqrt
 from collections import namedtuple
 import itertools
 
-from scipy.spatial import ConvexHull
 from PIL import Image
-from scipy.misc import toimage
 import logging
+from waldo.scripts.waldo.data_manipulation import *
 
 sys.path.insert(0, 'steps')
 logger = logging.getLogger('libs')
@@ -79,6 +78,12 @@ bounding_box_tuple = namedtuple('bounding_box_tuple', 'area '
 
 
 def get_orientation(origin, p1, p2):
+    """ Given origin and two points, return the orientation of the Point p1 with
+        regards to Point p2 using origin.
+        Returns
+        -------
+        integer: Negative if p1 is clockwise of p2.
+        """
     difference = (
         ((p2[0] - origin[0]) * (p1[1] - origin[1]))
         - ((p1[0] - origin[0]) * (p2[1] - origin[1]))
@@ -87,6 +92,12 @@ def get_orientation(origin, p1, p2):
 
 
 def compute_hull(points):
+    """ Given input list of points, return a list of points that
+        made up the convex hull.
+        Returns
+        -------
+        [(float, float)]: convexhull points
+        """
     hull_points = []
     start = points[0]
     min_x = start[0]

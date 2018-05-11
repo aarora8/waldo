@@ -6,15 +6,15 @@
 
 import numpy as np
 from PIL import Image, ImageDraw
-from data_types import *
+from waldo.scripts.waldo.data_types import *
 
 
-def convert_to_mask(x):
+def convert_to_mask(x, c):
     """ This function accepts an object x that should represent an image
         with polygon objects in it, and returns an object representing an image
         with an object mask.
      """
-    validate_image_with_objects(x)
+    validate_image_with_objects(x, c)
 
     im = x['img']
     object_id = 0
@@ -37,7 +37,7 @@ def convert_to_mask(x):
         object_class.append(object_id)
     y['mask'] = mask_img_arr
 
-    validate_image_with_mask(y)
+    validate_image_with_mask(y, c)
     return y
 
 
@@ -74,7 +74,7 @@ def convert_to_combined_image(x, c):
     this function doesn't do padding, you need to call pad_combined_image.
     """
     validate_config(c)
-    validate_image_with_mask(x)
+    validate_image_with_mask(x, c)
     y = dict()
     # # TODO.. set y.
     validate_combined_image(y, c)
