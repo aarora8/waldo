@@ -2,7 +2,7 @@
 
 # Apache 2.0
 import numpy as np
-import waldo.scripts.waldo.core_config  # import waldo.core_config
+from waldo.scripts.waldo.core_config import CoreConfig # import waldo.core_config
 
 
 def validate_config(c):

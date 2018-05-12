@@ -12,7 +12,8 @@ import numpy as np
 from math import hypot
 from PIL import Image,ImageDraw
 from glob import glob
-from waldo.data_manipulation import * 
+from waldo.scripts.waldo.data_manipulation import *
+import waldo.scripts.waldo.core_config
 
 
 class DatasetICDAR2015:

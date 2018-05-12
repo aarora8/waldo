@@ -43,15 +43,15 @@ parser = argparse.ArgumentParser(description="Creates line images from page imag
                                              " data/LDC2013T09 data/LDC2013T15 data/madcat.train.raw.lineid "
                                              " data/local/lines ",
                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('database_path1', type=str,
+parser.add_argument('--database_path1', type=str,
                     help='Path to the downloaded madcat data directory 1')
-parser.add_argument('database_path2', type=str,
+parser.add_argument('--database_path2', type=str,
                     help='Path to the downloaded madcat data directory 2')
-parser.add_argument('database_path3', type=str,
+parser.add_argument('--database_path3', type=str,
                     help='Path to the downloaded madcat data directory 3')
-parser.add_argument('data_splits', type=str,
+parser.add_argument('--data_splits', type=str,
                     help='Path to file that contains the train/test/dev split information')
-parser.add_argument('out_dir', type=str,
+parser.add_argument('--out_dir', type=str,
                     help='directory location to write output files')
 parser.add_argument('--padding', type=int, default=400,
                     help='padding across horizontal/verticle direction')
@@ -368,7 +368,6 @@ def get_smaller_angle(bounding_box):
     else:
         return ortho_vector_angle_updated
 
-
 def if_previous_b_b_smaller_than_curr_b_b(b_b_p, b_b_c):
     if b_b_c.length_parallel < b_b_c.length_orthogonal:
         curr_smaller_length = b_b_c.length_parallel
@@ -388,7 +387,6 @@ def if_previous_b_b_smaller_than_curr_b_b(b_b_p, b_b_c):
     else:
         return False
 
-
 def rotate_list_points(points, bounding_box, center, if_opposite_direction=False):
     center_x, center_y = center
 
@@ -407,7 +405,6 @@ def rotate_list_points(points, bounding_box, center, if_opposite_direction=False
         rot_points.append((x, y))
 
     return rot_points
-
 
 def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_data):
     """ Given a page image, extracts the page image mask from it.
@@ -500,6 +497,7 @@ def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_dat
     img_crop = img.crop(box)
     set_line_image_data(img_crop, image_file_name, image_fh)
 
+
 def get_bounding_box(image_file_name, madcat_file_path):
     """ Given a page image, extracts the line images from it.
     Inout
@@ -528,6 +526,7 @@ def get_bounding_box(image_file_name, madcat_file_path):
         line_image_file_name = base_name + line_id + '.tif'
         mydata[line_image_file_name] = bounding_box
     return mydata
+
 
 def check_file_location(base_name, wc_dict1, wc_dict2, wc_dict3):
     """ Returns the complete path of the page image and corresponding
@@ -587,25 +586,22 @@ def check_writing_condition(wc_dict, base_name):
 
 ### main ###
 def main():
-    writing_condition_folder_list = args.database_path1.split('/')
-    writing_condition_folder1 = ('/').join(writing_condition_folder_list[:5])
+    args.database_path1 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2012T15"
+    args.database_path2 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T09"
+    args.database_path3 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T15"
+    args.data_splits = "/Users/ashisharora/google_Drive/madcat_arabic/madcat.dev.raw.lineid"
+    args.out_dir = "/Users/ashisharora/google_Drive/madcat_arabic/masks"
 
-    writing_condition_folder_list = args.database_path2.split('/')
-    writing_condition_folder2 = ('/').join(writing_condition_folder_list[:5])
-
-    writing_condition_folder_list = args.database_path3.split('/')
-    writing_condition_folder3 = ('/').join(writing_condition_folder_list[:5])
-
-    writing_conditions1 = os.path.join(writing_condition_folder1, 'docs', 'writing_conditions.tab')
-    writing_conditions2 = os.path.join(writing_condition_folder2, 'docs', 'writing_conditions.tab')
-    writing_conditions3 = os.path.join(writing_condition_folder3, 'docs', 'writing_conditions.tab')
+    writing_conditions1 = os.path.join(args.database_path1, 'writing_conditions.tab')
+    writing_conditions2 = os.path.join(args.database_path2, 'writing_conditions.tab')
+    writing_conditions3 = os.path.join(args.database_path3, 'writing_conditions.tab')
 
     wc_dict1 = parse_writing_conditions(writing_conditions1)
     wc_dict2 = parse_writing_conditions(writing_conditions2)
     wc_dict3 = parse_writing_conditions(writing_conditions3)
 
     output_directory = args.out_dir
-    image_file = os.path.join(output_directory, 'images.scp')
+    image_file = os.path.join(output_directory, 'images.txt')
     image_fh = open(image_file, 'w', encoding='utf-8')
 
     splits_handle = open(args.data_splits, 'r')
