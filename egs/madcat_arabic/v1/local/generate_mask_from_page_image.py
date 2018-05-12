@@ -377,6 +377,18 @@ def if_previous_b_b_smaller_than_curr_b_b(b_b_p, b_b_c):
     else:
         return False
 
+def get_shorter_side(object):
+    bounding_box = object['polygon']
+    if bounding_box.length_parallel < bounding_box.length_orthogonal:
+        return bounding_box.length_parallel
+    else:
+        return bounding_box.length_orthogonal
+
+def get_object_classes(objects):
+    class_names = np.array([1 for object in objects])
+    object_class_arr = np.insert(class_names, 0, 0)
+    return object_class_arr
+
 def rotate_list_points(points, bounding_box, center, if_opposite_direction=False):
     center_x, center_y = center
 
@@ -396,7 +408,7 @@ def rotate_list_points(points, bounding_box, center, if_opposite_direction=False
 
     return rot_points
 
-def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_data):
+def get_mask_from_page_image(image_file_name, image_fh, objects):
     """ Given a page image, extracts the page image mask from it.
         Input
         -----
@@ -406,37 +418,28 @@ def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_dat
         """
     im_wo_pad = Image.open(image_file_name)
     im = pad_image(im_wo_pad)
+    im_arr = np.array(im)
     img = Image.new('L', (im.size[0], im.size[1]), "white")
     pixels = img.load()
-    val = 0
-    base_name = os.path.splitext(os.path.basename(image_file_name))[0]
 
     config = CoreConfig()
     config.train_image_size = int(im.size[0] // 2)
     config.padding = int(args.padding // 2)
-    config.write(base_name)
+    base_name = os.path.splitext(os.path.basename(image_file_name))[0]
+    config_path = os.path.join(args.out_dir, base_name + '.txt')
+    config.write(config_path)
 
-    doc = minidom.parse(madcat_file_path)
-    zone = doc.getElementsByTagName('zone')
+    image_with_objects = {
+        'img': im_arr,
+        'objects': objects
+    }
+
     bounding_box_list = []
-    for node in zone:
-        id = node.getAttribute('id')
-        line_id = '_' + id.zfill(4)
-        line_image_file_name = base_name + line_id + '.tif'
-        bounding_box = my_data[line_image_file_name]
-        bounding_box_list.append(bounding_box)
+    for object in objects:
+        bounding_box_list.append(object['polygon'])
 
-    for index in range(0, len(bounding_box_list)):
-        bounding_box = bounding_box_list[index]
-        if index == len(bounding_box_list) - 1:
-            previous_bounding_box = bounding_box_list[len(bounding_box_list) - 2]
-        else:
-            previous_bounding_box = bounding_box_list[index - 1]
-
-        if_previous_smaller_than_curr = \
-            if_previous_b_b_smaller_than_curr_b_b(previous_bounding_box, bounding_box)
-
-        val_old = val
+    val = 0
+    for bounding_box in bounding_box_list:
         val += 5
 
         g_b_b1, g_b_b2, g_b_b3, g_b_b4 = bounding_box.corner_points
@@ -481,8 +484,6 @@ def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_dat
 
         for pt in rel_points_old:
             x, y = pt[0] + g_b_bmin_x, pt[1] + g_b_bmin_y
-            if if_previous_smaller_than_curr and pixels[int(x), int(y)] == val_old:
-                continue
             pixels[int(x), int(y)] = val
 
     min_x = int(args.padding // 2)
@@ -503,9 +504,11 @@ def get_bounding_box(image_file_name, madcat_file_path):
                                   corresponding to the page image.
     """
     mydata = {}
+    objects = []
     doc = minidom.parse(madcat_file_path)
     zone = doc.getElementsByTagName('zone')
     for node in zone:
+        object = {}
         id = node.getAttribute('id')
         token_image = node.getElementsByTagName('token-image')
         minimum_bounding_box_input = []
@@ -516,12 +519,29 @@ def get_bounding_box(image_file_name, madcat_file_path):
                 minimum_bounding_box_input.append(word_coordinate)
         updated_mbb_input = update_minimum_bounding_box_input(minimum_bounding_box_input)
         bounding_box = minimum_bounding_box(updated_mbb_input)
+        points_ordered = compute_hull(list(bounding_box.corner_points))
+
+        ordered_bounding_box = bounding_box_tuple(bounding_box.area,
+                                                  bounding_box.length_parallel,
+                                                  bounding_box.length_orthogonal,
+                                                  bounding_box.length_orthogonal,
+                                                  bounding_box.unit_vector,
+                                                  bounding_box.unit_vector_angle,
+                                                  set(points_ordered),
+                                                  )
+
+        object['polygon'] = ordered_bounding_box
+        objects.append(object)
 
         base_name = os.path.splitext(os.path.basename(image_file_name))[0]
         line_id = '_' + id.zfill(4)
-        line_image_file_name = base_name + line_id + '.tif'
-        mydata[line_image_file_name] = bounding_box
-    return mydata
+        line_image_file_name = base_name + line_id + '.png'
+        mydata[line_image_file_name] = ordered_bounding_box
+
+    sorted_objects = sorted(objects,
+                            key=lambda object: get_shorter_side(object), reverse=True)
+
+    return mydata, sorted_objects
 
 def check_file_location(base_name, wc_dict1, wc_dict2, wc_dict3):
     """ Returns the complete path of the page image and corresponding
@@ -579,7 +599,6 @@ def check_writing_condition(wc_dict, base_name):
 
     return True
 
-### main ###
 def main():
     args.database_path1 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2012T15"
     args.database_path2 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T09"
@@ -611,8 +630,8 @@ def main():
             if wc_dict is None or not check_writing_condition(wc_dict, base_name):
                 continue
             if madcat_file_path is not None:
-                my_data = get_bounding_box(image_file_path, madcat_file_path)
-                get_mask_from_page_image(image_file_path, madcat_file_path, image_fh, my_data)
+                my_data, objects = get_bounding_box(image_file_path, madcat_file_path)
+                get_mask_from_page_image(image_file_path, image_fh, objects)
 
 if __name__ == '__main__':
       main()
