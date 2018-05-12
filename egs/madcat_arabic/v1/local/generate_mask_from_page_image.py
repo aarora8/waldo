@@ -19,15 +19,15 @@ import sys
 import argparse
 import os
 import xml.dom.minidom as minidom
+from waldo.scripts.waldo.data_manipulation import *
+from waldo.scripts.waldo.core_config import CoreConfig
+import torch
 import numpy as np
 from math import atan2, cos, sin, pi, sqrt
 from collections import namedtuple
-import itertools
-
 from PIL import Image
 import logging
-from waldo.scripts.waldo.data_manipulation import *
-from waldo.scripts.waldo.core_config import CoreConfig
+
 
 sys.path.insert(0, 'steps')
 logger = logging.getLogger('libs')
@@ -273,16 +273,6 @@ def minimum_bounding_box(points):
         corner_points=set(rectangle_corners(min_rectangle))
     )
 
-def get_center(im):
-    """ Given image, returns the location of center pixel
-    Returns
-    -------
-    (int, int): center of the image
-    """
-    center_x = im.size[0] / 2
-    center_y = im.size[1] / 2
-    return int(center_x), int(center_y)
-
 def pad_image(image):
     """ Given an image, returns a padded image around the border.
         This routine save the code from crashing if bounding boxes that are
@@ -324,89 +314,12 @@ def set_line_image_data(image, image_file_name, image_fh):
     imgray.save(image_path)
     image_fh.write(image_path + '\n')
 
-def get_horizontal_angle(unit_vector_angle):
-    """ Given an angle in radians, returns angle of the unit vector in
-        first or fourth quadrant.
-    Returns
-    ------
-    (float): updated angle of the unit vector to be in radians.
-             It is only in first or fourth quadrant.
-    """
-    if unit_vector_angle > pi / 2 and unit_vector_angle <= pi:
-        unit_vector_angle = unit_vector_angle - pi
-    elif unit_vector_angle > -pi and unit_vector_angle < -pi / 2:
-        unit_vector_angle = unit_vector_angle + pi
-
-    return unit_vector_angle
-
-def get_smaller_angle(bounding_box):
-    """ Given a rectangle, returns its smallest absolute angle from horizontal axis.
-    Returns
-    ------
-    (float): smallest angle of the rectangle to be in radians.
-    """
-    unit_vector = bounding_box.unit_vector
-    unit_vector_angle = bounding_box.unit_vector_angle
-    ortho_vector = orthogonal_vector(unit_vector)
-    ortho_vector_angle = atan2(ortho_vector[1], ortho_vector[0])
-
-    unit_vector_angle_updated = get_horizontal_angle(unit_vector_angle)
-    ortho_vector_angle_updated = get_horizontal_angle(ortho_vector_angle)
-
-    if abs(unit_vector_angle_updated) < abs(ortho_vector_angle_updated):
-        return unit_vector_angle_updated
-    else:
-        return ortho_vector_angle_updated
-
-def if_previous_b_b_smaller_than_curr_b_b(b_b_p, b_b_c):
-    if b_b_c.length_parallel < b_b_c.length_orthogonal:
-        curr_smaller_length = b_b_c.length_parallel
-    else:
-        curr_smaller_length = b_b_c.length_orthogonal
-
-    if b_b_p is None:
-        return False
-
-    if b_b_p.length_parallel < b_b_p.length_orthogonal:
-        previous_smaller_length = b_b_p.length_parallel
-    else:
-        previous_smaller_length = b_b_p.length_orthogonal
-
-    if previous_smaller_length < curr_smaller_length:
-        return True
-    else:
-        return False
-
 def get_shorter_side(object):
     bounding_box = object['bounding_box']
     if bounding_box.length_parallel < bounding_box.length_orthogonal:
         return bounding_box.length_parallel
     else:
         return bounding_box.length_orthogonal
-
-def get_object_classes(objects):
-    class_names = np.array([1 for object in objects])
-    object_class_arr = np.insert(class_names, 0, 0)
-    return object_class_arr
-
-def rotate_list_points(points, bounding_box, center, if_opposite_direction=False):
-    center_x, center_y = center
-
-    if if_opposite_direction:
-        rotation_angle_in_rad = get_smaller_angle(bounding_box)
-    else:
-        rotation_angle_in_rad = -get_smaller_angle(bounding_box)
-
-    val_cos_angle = cos(rotation_angle_in_rad)
-    val_sin_angle = sin(rotation_angle_in_rad)
-
-    rot_points = []
-    for pt in points:
-        x = (pt[0] - center_x) * val_cos_angle - (pt[1] - center_y) * val_sin_angle + center_x
-        y = (pt[1] - center_y) * val_cos_angle + (pt[0] - center_x) * val_sin_angle + center_y
-        rot_points.append((x, y))
-
-    return rot_points
 
 def get_mask_from_page_image(image_file_name, image_fh, objects):
     """ Given a page image, extracts the page image mask from it.
@@ -442,8 +355,7 @@ def get_mask_from_page_image(image_file_name, image_fh, objects):
     img_crop = new_image.crop(box)
     set_line_image_data(img_crop, image_file_name, image_fh)
 
-
-def get_bounding_box(image_file_name, madcat_file_path):
+def get_bounding_box(madcat_file_path):
     """ Given a page image, extracts the line images from it.
     Inout
     -----
@@ -451,13 +363,11 @@ def get_bounding_box(image_file_name, madcat_file_path):
     madcat_file_path (string): complete path and name of the madcat xml file
                                   corresponding to the page image.
     """
-    mydata = {}
     objects = []
     doc = minidom.parse(madcat_file_path)
     zone = doc.getElementsByTagName('zone')
     for node in zone:
         object = {}
-        id = node.getAttribute('id')
         token_image = node.getElementsByTagName('token-image')
         minimum_bounding_box_input = []
         for token_node in token_image:
@@ -482,15 +392,10 @@ def get_bounding_box(image_file_name, madcat_file_path):
         object['polygon'] = points_ordered
         objects.append(object)
 
-        base_name = os.path.splitext(os.path.basename(image_file_name))[0]
-        line_id = '_' + id.zfill(4)
-        line_image_file_name = base_name + line_id + '.png'
-        mydata[line_image_file_name] = ordered_bounding_box
-
     sorted_objects = sorted(objects,
                             key=lambda object: get_shorter_side(object), reverse=True)
 
-    return mydata, sorted_objects
+    return sorted_objects
 
 def check_file_location(base_name, wc_dict1, wc_dict2, wc_dict3):
     """ Returns the complete path of the page image and corresponding
@@ -579,7 +484,7 @@ def main():
             if wc_dict is None or not check_writing_condition(wc_dict, base_name):
                 continue
             if madcat_file_path is not None:
-                my_data, objects = get_bounding_box(image_file_path, madcat_file_path)
+                objects = get_bounding_box(madcat_file_path)
                 get_mask_from_page_image(image_file_path, image_fh, objects)
 
 if __name__ == '__main__':

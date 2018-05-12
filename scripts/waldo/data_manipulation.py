@@ -20,13 +20,13 @@ def convert_to_mask(x, c):
     object_id = 0
     y = dict()
     y['img'] = im
-    mask_img = Image.new('L', (im.shape[1], im.shape[0]), "white")
+    mask_img = Image.new('L', (im.shape[1], im.shape[0]), 0)
     mask_img_arr = np.array(mask_img)
     object_class = list()
     object_class.append(0)
     for object in x['objects']:
         ordered_polygon_points = object['polygon']
-        object_id += 5
+        object_id += 1
         temp_img = Image.new('L', (im.shape[1], im.shape[0]), "white")
         ImageDraw.Draw(temp_img).polygon(ordered_polygon_points, fill=object_id)
         temp_img_arr = np.array(temp_img)
