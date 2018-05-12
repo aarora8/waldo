@@ -321,7 +321,7 @@ def get_shorter_side(object):
     else:
         return bounding_box.length_orthogonal
 
-def get_mask_from_page_image(image_file_name, image_fh, objects):
+def get_mask_from_page_image(image_file_name, objects):
     """ Given a page image, extracts the page image mask from it.
         Input
         -----
@@ -346,14 +346,15 @@ def get_mask_from_page_image(image_file_name, image_fh, objects):
     }
 
     y = convert_to_mask(image_with_objects, config)
-    new_image = Image.fromarray(y['mask'])
-    min_x = int(args.padding // 2)
-    min_y = int(args.padding // 2)
-    width_x = int(im_wo_pad.size[0])
-    height_y = int(im_wo_pad.size[1])
-    box = (min_x, min_y, width_x + min_x, height_y + min_y)
-    img_crop = new_image.crop(box)
-    set_line_image_data(img_crop, image_file_name, image_fh)
+    return y
+    # new_image = Image.fromarray(y['mask'])
+    # min_x = int(args.padding // 2)
+    # min_y = int(args.padding // 2)
+    # width_x = int(im_wo_pad.size[0])
+    # height_y = int(im_wo_pad.size[1])
+    # box = (min_x, min_y, width_x + min_x, height_y + min_y)
+    # img_crop = new_image.crop(box)
+
 
 def get_bounding_box(madcat_file_path):
     """ Given a page image, extracts the line images from it.
@@ -454,27 +455,28 @@ def check_writing_condition(wc_dict, base_name):
     return True
 
 def main():
-    args.database_path1 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2012T15"
-    args.database_path2 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T09"
-    args.database_path3 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T15"
-    args.data_splits = "/Users/ashisharora/google_Drive/madcat_arabic/madcat.dev.raw.lineid"
-    args.out_dir = "/Users/ashisharora/google_Drive/madcat_arabic/masks"
+    writing_condition_folder_list = args.database_path1.split('/')
+    writing_condition_folder1 = ('/').join(writing_condition_folder_list[:5])
 
-    writing_conditions1 = os.path.join(args.database_path1, 'writing_conditions.tab')
-    writing_conditions2 = os.path.join(args.database_path2, 'writing_conditions.tab')
-    writing_conditions3 = os.path.join(args.database_path3, 'writing_conditions.tab')
+    writing_condition_folder_list = args.database_path2.split('/')
+    writing_condition_folder2 = ('/').join(writing_condition_folder_list[:5])
+
+    writing_condition_folder_list = args.database_path3.split('/')
+    writing_condition_folder3 = ('/').join(writing_condition_folder_list[:5])
+
+    writing_conditions1 = os.path.join(writing_condition_folder1, 'docs', 'writing_conditions.tab')
+    writing_conditions2 = os.path.join(writing_condition_folder2, 'docs', 'writing_conditions.tab')
+    writing_conditions3 = os.path.join(writing_condition_folder3, 'docs', 'writing_conditions.tab')
 
     wc_dict1 = parse_writing_conditions(writing_conditions1)
     wc_dict2 = parse_writing_conditions(writing_conditions2)
     wc_dict3 = parse_writing_conditions(writing_conditions3)
 
-    output_directory = args.out_dir
-    image_file = os.path.join(output_directory, 'images.txt')
-    image_fh = open(image_file, 'w', encoding='utf-8')
-
     splits_handle = open(args.data_splits, 'r')
     splits_data = splits_handle.read().strip().split('\n')
 
+    data = []
+    output_path = args.out_dir + '.pth.tar'
     prev_base_name = ''
     for line in splits_data:
         base_name = os.path.splitext(os.path.splitext(line.split(' ')[0])[0])[0]
@@ -485,7 +487,11 @@ def main():
                 continue
             if madcat_file_path is not None:
                 objects = get_bounding_box(madcat_file_path)
-                get_mask_from_page_image(image_file_path, image_fh, objects)
+                y = get_mask_from_page_image(image_file_path, objects)
+                y['name'] = base_name
+                data.append(y)
+
+    torch.save(data, output_path)
 
 if __name__ == '__main__':
       main()
