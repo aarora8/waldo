@@ -303,17 +303,6 @@ def update_minimum_bounding_box_input(bounding_box_input):
 
     return updated_minimum_bounding_box_input
 
-def set_line_image_data(image, image_file_name, image_fh):
-    """ Given an image, saves a flipped line image. Line image file name
-            is formed by appending the line id at the end page image name.
-        """
-    base_name = os.path.splitext(os.path.basename(image_file_name))[0]
-    line_image_file_name = base_name + '.png'
-    image_path = os.path.join(args.out_dir, line_image_file_name)
-    imgray = image.convert('L')
-    imgray.save(image_path)
-    image_fh.write(image_path + '\n')
-
 def get_shorter_side(object):
     bounding_box = object['bounding_box']
     if bounding_box.length_parallel < bounding_box.length_orthogonal:
@@ -347,13 +336,6 @@ def get_mask_from_page_image(image_file_name, objects):
 
     y = convert_to_mask(image_with_objects, config)
     return y
-    # new_image = Image.fromarray(y['mask'])
-    # min_x = int(args.padding // 2)
-    # min_y = int(args.padding // 2)
-    # width_x = int(im_wo_pad.size[0])
-    # height_y = int(im_wo_pad.size[1])
-    # box = (min_x, min_y, width_x + min_x, height_y + min_y)
-    # img_crop = new_image.crop(box)
 
 
 def get_bounding_box(madcat_file_path):
