@@ -27,6 +27,7 @@ import itertools
 from PIL import Image
 import logging
 from waldo.scripts.waldo.data_manipulation import *
+from waldo.scripts.waldo.core_config import CoreConfig
 
 sys.path.insert(0, 'steps')
 logger = logging.getLogger('libs')
@@ -90,7 +91,6 @@ def get_orientation(origin, p1, p2):
     )
     return difference
 
-
 def compute_hull(points):
     """ Given input list of points, return a list of points that
         made up the convex hull.
@@ -133,7 +133,6 @@ def compute_hull(points):
         point = far_point
     return hull_points
 
-
 def unit_vector(pt0, pt1):
     """ Given two points pt0 and pt1, return a unit vector that
         points in the direction of pt0 to pt1.
@@ -145,7 +144,6 @@ def unit_vector(pt0, pt1):
     return (pt1[0] - pt0[0]) / dis_0_to_1, \
            (pt1[1] - pt0[1]) / dis_0_to_1
 
-
 def orthogonal_vector(vector):
     """ Given a vector, returns a orthogonal/perpendicular vector of equal length.
     Returns
@@ -153,7 +151,6 @@ def orthogonal_vector(vector):
     (float, float): A vector that points in the direction orthogonal to vector.
     """
     return -1 * vector[1], vector[0]
-
 
 def bounding_area(index, hull):
     """ Given index location in an array and convex hull, it gets two points
@@ -189,7 +186,6 @@ def bounding_area(index, hull):
             'unit_vector': unit_vector_p,
             }
 
-
 def to_xy_coordinates(unit_vector_angle, point):
     """ Given angle from horizontal axis and a point from origin,
         returns converted unit vector coordinates in x, y coordinates.
@@ -201,7 +197,6 @@ def to_xy_coordinates(unit_vector_angle, point):
     angle_orthogonal = unit_vector_angle + pi / 2
     return point[0] * cos(unit_vector_angle) + point[1] * cos(angle_orthogonal), \
            point[0] * sin(unit_vector_angle) + point[1] * sin(angle_orthogonal)
-
 
 def rotate_points(center_of_rotation, angle, points):
     """ Rotates a point cloud around the center_of_rotation point by angle
@@ -226,7 +221,6 @@ def rotate_points(center_of_rotation, angle, points):
 
     return rot_points
 
-
 def rectangle_corners(rectangle):
     """ Given rectangle center and its inclination, returns the corner
         locations of the rectangle.
@@ -242,8 +236,6 @@ def rectangle_corners(rectangle):
 
     return rotate_points(rectangle['rectangle_center'], rectangle['unit_vector_angle'], corner_points)
 
-
-# use this function to find the listed properties of the minimum bounding box of a point cloud
 def minimum_bounding_box(points):
     """ Given a list of 2D points, it returns the minimum area rectangle bounding all
         the points in the point cloud.
@@ -281,7 +273,6 @@ def minimum_bounding_box(points):
         corner_points=set(rectangle_corners(min_rectangle))
     )
 
-
 def get_center(im):
     """ Given image, returns the location of center pixel
     Returns
@@ -291,7 +282,6 @@ def get_center(im):
     center_x = im.size[0] / 2
     center_y = im.size[1] / 2
     return int(center_x), int(center_y)
-
 
 def pad_image(image):
     """ Given an image, returns a padded image around the border.
@@ -420,6 +410,12 @@ def get_mask_from_page_image(image_file_name, madcat_file_path, image_fh, my_dat
     pixels = img.load()
     val = 0
     base_name = os.path.splitext(os.path.basename(image_file_name))[0]
+
+    config = CoreConfig()
+    config.train_image_size = int(im.size[0] // 2)
+    config.padding = int(args.padding // 2)
+    config.write(base_name)
+
     doc = minidom.parse(madcat_file_path)
     zone = doc.getElementsByTagName('zone')
     bounding_box_list = []
@@ -527,7 +523,6 @@ def get_bounding_box(image_file_name, madcat_file_path):
         mydata[line_image_file_name] = bounding_box
     return mydata
 
-
 def check_file_location(base_name, wc_dict1, wc_dict2, wc_dict3):
     """ Returns the complete path of the page image and corresponding
         xml file.
@@ -606,6 +601,7 @@ def main():
 
     splits_handle = open(args.data_splits, 'r')
     splits_data = splits_handle.read().strip().split('\n')
+
     prev_base_name = ''
     for line in splits_data:
         base_name = os.path.splitext(os.path.splitext(line.split(' ')[0])[0])[0]

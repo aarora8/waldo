@@ -13,7 +13,7 @@ from math import hypot
 from PIL import Image,ImageDraw
 from glob import glob
 from waldo.scripts.waldo.data_manipulation import *
-import waldo.scripts.waldo.core_config
+from waldo.scripts.waldo.core_config import CoreConfig
 
 
 class DatasetICDAR2015:
@@ -135,7 +135,7 @@ class DatasetICDAR2015:
                 'objects':sorted_objects
             }
 
-            image_with_mask = convert_to_mask(image_with_objects)
+            image_with_mask = convert_to_mask(image_with_objects, CoreConfig)
 
             data.append(image_with_mask)
 
