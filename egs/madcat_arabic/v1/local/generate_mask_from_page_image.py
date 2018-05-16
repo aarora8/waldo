@@ -18,8 +18,9 @@ import sys
 import argparse
 import os
 import xml.dom.minidom as minidom
-from waldo.scripts.waldo.data_manipulation import *
-from waldo.scripts.waldo.core_config import CoreConfig
+from waldo.data_manipulation import *
+from waldo.mar_utils import _compute_hull
+from waldo.core_config import CoreConfig
 import torch
 import numpy as np
 from PIL import Image
@@ -139,7 +140,7 @@ def get_bounding_box(madcat_file_path):
                 minimum_bounding_box_input.append(word_coordinate)
         updated_mbb_input = update_minimum_bounding_box_input(minimum_bounding_box_input)
         points = get_minimum_bounding_box(updated_mbb_input)
-        points_ordered = compute_hull(points)
+        points_ordered = _compute_hull(points)
         object['polygon'] = points_ordered
         objects.append(object)
     return objects

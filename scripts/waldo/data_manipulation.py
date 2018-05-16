@@ -22,31 +22,23 @@ def convert_to_mask(x, c):
     object_id = 0
     y = dict()
     y['img'] = im
-    mask_img = Image.new('L', (im.shape[1], im.shape[2]), 0)
-    mask_img_arr = np.transpose(np.array(mask_img))
-
+    mask_img = Image.new('L', (im.shape[1], im.shape[0]), 0)
+    mask_img_arr = np.array(mask_img)
     object_class = list()
     object_class.append(0)
     for object in x['objects']:
         ordered_polygon_points = object['polygon']
         object_id += 1
-        temp_img = Image.new('L', (im.shape[1], im.shape[2]), 0)
-        ImageDraw.Draw(temp_img).polygon(
-            ordered_polygon_points, fill=object_id)
-        temp_img_arr = np.transpose(np.array(temp_img))
-        pixels = np.where(temp_img_arr == object_id,
-                          temp_img_arr, mask_img_arr)
+        temp_img = Image.new('L', (im.shape[1], im.shape[0]), 0)
+        ImageDraw.Draw(temp_img).polygon(ordered_polygon_points, fill=object_id)
+        temp_img_arr = np.array(temp_img)
+        pixels = np.where(temp_img_arr == object_id, temp_img_arr, mask_img_arr)
         array = np.array(pixels, dtype=np.uint8)
         new_image = Image.fromarray(array)
         mask_img_arr = np.array(new_image)
         object_class.append(1)
     y['mask'] = mask_img_arr
-
-    if 'object_class' in x:
-        y['object_class'] = x['object_class']
-    else:
-        y['object_class'] = get_object_class(x)
-
+    y['object_class'] = object_class
     validate_image_with_mask(y, c)
     return y
 

@@ -60,7 +60,8 @@ def validate_image_with_mask(x, c):
     x_mask = x['mask']
     dims_mask = x_mask.shape
 
-    if len(dims_mask) != 2 or dims_mask[0] != dims[1] or dims_mask[1] != dims[2]:
+    #if len(dims_mask) != 2 or dims_mask[0] != dims[1] or dims_mask[1] != dims[2]:
+    if len(dims_mask) != 2 or dims_mask[0] != dims[0] or dims_mask[1] != dims[1]:
         raise ValueError('same mask shape and image shape required.')
 
     mask_unique_val = np.unique(x_mask)
