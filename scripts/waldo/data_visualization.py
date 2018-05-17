@@ -2,12 +2,17 @@
 
 # Apache 2.0
 
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
 import numpy as np
 from PIL import Image
 from io import BytesIO
 
-from waldo.data_types import *
+from waldo.scripts.waldo.data_types import *
 
 
 def visualize_mask(x, c, transparency=0.3):
@@ -34,24 +39,24 @@ def visualize_mask(x, c, transparency=0.3):
 
 
 
-    validate_image_with_mask(x, c)
+    # validate_image_with_mask(x, c)
     im = x['img']
-    im = np.swapaxes(im, 0, 2)
-    mask = np.transpose(x['mask'])
+    # im = np.swapaxes(im, 0, 2)
+    mask = x['mask']
     
     num_objects = np.unique(mask).shape[0]
     cmap = get_cmap(num_objects)
     mask_rgb = get_colored_mask(mask,num_objects,cmap)
-
     plt.imshow(im)
     plt.imshow(mask_rgb, alpha=transparency)
     plt.subplots_adjust(0,0,1,1)
-    buffer_ = BytesIO()
-    plt.savefig(buffer_, format = "png")
-    buffer_.seek(0)
-    image = Image.open(buffer_)
-    x['img'] = np.swapaxes(np.array(image), 0, 2)
-    buffer_.close()
+    # buffer_ = BytesIO()
+
+    plt.savefig('yoyo', format = "png")
+    # buffer_.seek(0)
+    # image = Image.open(buffer_)
+    # x['img'] = np.swapaxes(np.array(image), 0, 2)
+    # buffer_.close()
 
     return
 
