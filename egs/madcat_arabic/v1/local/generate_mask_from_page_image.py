@@ -92,8 +92,8 @@ def downsample_image(image):
 
 def set_line_image_data(image, image_file_name, image_fh):
     base_name = os.path.splitext(os.path.basename(image_file_name))[0]
-    line_image_file_name = base_name + '.png'
-    image_path = os.path.join(args.out_dir, line_image_file_name)
+    image_file_name = base_name + '.png'
+    image_path = os.path.join(args.out_dir, image_file_name)
     imgray = image.convert('L')
     imgray.save(image_path)
     image_fh.write(image_path + '\n')
@@ -124,7 +124,7 @@ def get_mask_from_page_image(image_file_name, objects, image_fh):
     }
 
     y = convert_to_mask(image_with_objects, config)
-    visualize_object(y, 0.3)
+    #visualize_object(y, 0.3)
     y_mask_arr = y['mask']
     new_image = Image.fromarray(y_mask_arr)
     set_line_image_data(new_image, image_file_name, image_fh)

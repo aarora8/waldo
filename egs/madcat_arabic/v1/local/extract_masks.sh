@@ -34,5 +34,6 @@ $cmd JOB=1:$nj $log_dir/extract_lines.JOB.log \
 
 ## concatenate the .scp files together.
 for n in $(seq $nj); do
-  cat $data/$n/images.scp || exit 1;
+  cat $data/$n/images.txt || exit 1;
 done > $data/images.scp || exit 1
+
