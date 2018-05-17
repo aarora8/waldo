@@ -18,15 +18,10 @@ import sys
 import argparse
 import os
 import xml.dom.minidom as minidom
-# from waldo.scripts.waldo.data_manipulation import *
-# from waldo.scripts.waldo.core_config import CoreConfig
-from waldo.scripts.waldo.data_manipulation import *
-from waldo.scripts.waldo.mar_utils import _compute_hull
-from waldo.scripts.waldo.core_config import CoreConfig
-from waldo.scripts.waldo.data_visualization import visualize_mask
-import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
+from waldo.data_manipulation import *
+from waldo.core_config import CoreConfig
+from waldo.mar_utils import _compute_hull
+from waldo.data_visualization import visualize_mask
 
 import torch
 import numpy as np
@@ -49,15 +44,15 @@ parser = argparse.ArgumentParser(description="Creates line images from page imag
                                              " data/LDC2013T09 data/LDC2013T15 data/madcat.train.raw.lineid "
                                              " data/local/lines ",
                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--database_path1', type=str,
+parser.add_argument('database_path1', type=str,
                     help='Path to the downloaded madcat data directory 1')
-parser.add_argument('--database_path2', type=str,
+parser.add_argument('database_path2', type=str,
                     help='Path to the downloaded madcat data directory 2')
-parser.add_argument('--database_path3', type=str,
+parser.add_argument('database_path3', type=str,
                     help='Path to the downloaded madcat data directory 3')
-parser.add_argument('--data_splits', type=str,
+parser.add_argument('data_splits', type=str,
                     help='Path to file that contains the train/test/dev split information')
-parser.add_argument('--out_dir', type=str,
+parser.add_argument('out_dir', type=str,
                     help='directory location to write output files')
 parser.add_argument('--padding', type=int, default=400,
                     help='padding across horizontal/verticle direction')
@@ -81,6 +76,11 @@ def pad_image(image):
 
 
 def downsample_image(image):
+    """ Given an image, returns a resized image.
+    Returns
+    -------
+    image: page image
+    """
     ratio = int(args.downsampling_ratio)
     sx = float(image.size[0])
     sy = float(image.size[1])
@@ -101,12 +101,12 @@ def set_line_image_data(image, image_file_name, image_fh):
 
 def get_mask_from_page_image(image_file_name, objects, image_fh):
     """ Given a page image, extracts the page image mask from it.
-        Input
-        -----
-        image_file_name (string): complete path and name of the page image.
-        madcat_file_path (string): complete path and name of the madcat xml file
-                                      corresponding to the page image.
-        """
+    Input
+    -----
+    image_file_name (string): complete path and name of the page image.
+    madcat_file_path (string): complete path and name of the madcat xml file
+                                  corresponding to the page image.
+    """
     im_wo_pad = Image.open(image_file_name)
     im_pad = pad_image(im_wo_pad)
     im_resized = downsample_image(im_pad)
@@ -125,9 +125,9 @@ def get_mask_from_page_image(image_file_name, objects, image_fh):
 
     y = convert_to_mask(image_with_objects, config)
     visualize_object(y, 0.3)
-    # y_mask_arr = y['mask']
-    # new_image = Image.fromarray(y_mask_arr)
-    # set_line_image_data(new_image, image_file_name, image_fh)
+    y_mask_arr = y['mask']
+    new_image = Image.fromarray(y_mask_arr)
+    set_line_image_data(new_image, image_file_name, image_fh)
     return y
 
 
@@ -260,15 +260,19 @@ def visualize_object(x, transparency):
 
 
 def main():
-    args.database_path1 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2012T15"
-    args.database_path2 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T09"
-    args.database_path3 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T15"
-    args.data_splits = "/Users/ashisharora/google_Drive/madcat_arabic/madcat.dev.raw.lineid"
-    args.out_dir = "/Users/ashisharora/google_Drive/madcat_arabic/masks"
 
-    writing_conditions1 = os.path.join(args.database_path1, 'writing_conditions.tab')
-    writing_conditions2 = os.path.join(args.database_path2, 'writing_conditions.tab')
-    writing_conditions3 = os.path.join(args.database_path3, 'writing_conditions.tab')
+    writing_condition_folder_list = args.database_path1.split('/')
+    writing_condition_folder1 = ('/').join(writing_condition_folder_list[:5])
+
+    writing_condition_folder_list = args.database_path2.split('/')
+    writing_condition_folder2 = ('/').join(writing_condition_folder_list[:5])
+
+    writing_condition_folder_list = args.database_path3.split('/')
+    writing_condition_folder3 = ('/').join(writing_condition_folder_list[:5])
+
+    writing_conditions1 = os.path.join(writing_condition_folder1, 'docs', 'writing_conditions.tab')
+    writing_conditions2 = os.path.join(writing_condition_folder2, 'docs', 'writing_conditions.tab')
+    writing_conditions3 = os.path.join(writing_condition_folder3, 'docs', 'writing_conditions.tab')
 
     wc_dict1 = parse_writing_conditions(writing_conditions1)
     wc_dict2 = parse_writing_conditions(writing_conditions2)
@@ -295,7 +299,7 @@ def main():
                 y['name'] = base_name
                 data.append(y)
 
-    # torch.save(data, output_path)
+    torch.save(data, output_path)
 
 if __name__ == '__main__':
       main()

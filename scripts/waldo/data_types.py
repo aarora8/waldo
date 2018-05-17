@@ -2,7 +2,7 @@
 
 # Apache 2.0
 import numpy as np
-from waldo.scripts.waldo.core_config import CoreConfig
+from waldo.core_config import CoreConfig
 
 
 def validate_config(c, train_image_size=None):
