@@ -75,28 +75,31 @@ def pad_image(image):
     return padded_image
 
 
-def downsample_image(image):
-    """ Given an image, returns a resized image.
+def update_minimum_bounding_box_input(bounding_box_input):
+    """ Given list of 2D points, returns list of 2D points shifted by an offset.
     Returns
-    -------
-    image: page image
+    ------
+    points [(float, float)]: points, a list or tuple of 2D coordinates
     """
+    paded_mbb = []
+    offset = int(args.padding // 2)
+    for point in bounding_box_input:
+        x, y = point
+        new_x = x + offset
+        new_y = y + offset
+        new_point = (new_x, new_y)
+        paded_mbb.append(new_point)
+
+    resized_mbb = []
     ratio = int(args.downsampling_ratio)
-    sx = float(image.size[0])
-    sy = float(image.size[1])
-    new_sx = sx/ratio
-    new_sy = sy/ratio
+    for point in paded_mbb:
+        x, y = point
+        new_x = int(x/ratio)
+        new_y = int(y/ratio)
+        new_point = (new_x, new_y)
+        resized_mbb.append(new_point)
 
-    img = image.resize((int(new_sx), int(new_sy)))
-    return img
-
-def set_line_image_data(image, image_file_name, image_fh):
-    base_name = os.path.splitext(os.path.basename(image_file_name))[0]
-    image_file_name = base_name + '.png'
-    image_path = os.path.join(args.out_dir, image_file_name)
-    imgray = image.convert('L')
-    imgray.save(image_path)
-    image_fh.write(image_path + '\n')
+    return resized_mbb
 
 
 def get_mask_from_page_image(image_file_name, objects, image_fh):
@@ -131,31 +134,29 @@ def get_mask_from_page_image(image_file_name, objects, image_fh):
     return y
 
 
-def update_minimum_bounding_box_input(bounding_box_input):
-    """ Given list of 2D points, returns list of 2D points shifted by an offset.
+def downsample_image(image):
+    """ Given an image, returns a resized image.
     Returns
-    ------
-    points [(float, float)]: points, a list or tuple of 2D coordinates
+    -------
+    image: page image
     """
-    paded_mbb = []
-    offset = int(args.padding // 2)
-    for point in bounding_box_input:
-        x, y = point
-        new_x = x + offset
-        new_y = y + offset
-        new_point = (new_x, new_y)
-        paded_mbb.append(new_point)
-
-    resized_mbb = []
     ratio = int(args.downsampling_ratio)
-    for point in paded_mbb:
-        x, y = point
-        new_x = int(x/ratio)
-        new_y = int(y/ratio)
-        new_point = (new_x, new_y)
-        resized_mbb.append(new_point)
+    sx = float(image.size[0])
+    sy = float(image.size[1])
+    new_sx = sx/ratio
+    new_sy = sy/ratio
 
-    return resized_mbb
+    img = image.resize((int(new_sx), int(new_sy)))
+    return img
+
+
+def set_line_image_data(image, image_file_name, image_fh):
+    base_name = os.path.splitext(os.path.basename(image_file_name))[0]
+    image_file_name = base_name + '.png'
+    image_path = os.path.join(args.out_dir, image_file_name)
+    imgray = image.convert('L')
+    imgray.save(image_path)
+    image_fh.write(image_path + '\n')
 
 
 def get_bounding_box(madcat_file_path):
