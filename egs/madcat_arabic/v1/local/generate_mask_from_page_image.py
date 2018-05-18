@@ -127,7 +127,6 @@ def get_mask_from_page_image(image_file_name, objects, image_fh):
     }
 
     y = convert_to_mask(image_with_objects, config)
-    #visualize_object(y, 0.3)
     y_mask_arr = y['mask']
     new_image = Image.fromarray(y_mask_arr)
     set_line_image_data(new_image, image_file_name, image_fh)
@@ -245,19 +244,6 @@ def check_writing_condition(wc_dict, base_name):
         return False
 
     return True
-
-
-def visualize_object(x, transparency):
-    """Given a dictionary object as follows
-    x['img']: numpy array of shape (num_class,width,height)
-    x['mask']: numpy array of same dimensions as image, but with every element categorizing it
-    into one of the object ids
-    The method generates an image overlaying a translucent mask on the image and displays it.
-    """
-    c = CoreConfig()
-    c.num_colors = 1
-    visualize_mask(x,c,transparency)
-    return
 
 
 def main():
