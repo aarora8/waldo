@@ -81,18 +81,18 @@ def update_minimum_bounding_box_input(bounding_box_input):
     ------
     points [(float, float)]: points, a list or tuple of 2D coordinates
     """
-    paded_mbb = []
+    padded_mbb = []
     offset = int(args.padding // 2)
     for point in bounding_box_input:
         x, y = point
         new_x = x + offset
         new_y = y + offset
         new_point = (new_x, new_y)
-        paded_mbb.append(new_point)
+        padded_mbb.append(new_point)
 
     resized_mbb = []
     ratio = int(args.downsampling_ratio)
-    for point in paded_mbb:
+    for point in padded_mbb:
         x, y = point
         new_x = int(x/ratio)
         new_y = int(y/ratio)

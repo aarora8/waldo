@@ -88,10 +88,13 @@ def get_minimum_bounding_box(polygon):
 
 
 def convert_to_combined_image(x, c):
-    """ This function turns an 'image-with-mask' x into a 'combined' image,
+    """ This function processes an 'image-with-mask' x into a 'combined' image,
     containing both input and supervision information in a single numpy array.
     see 'validate_combined_image' in data_types.py for a description of what
     a combined image is.
+
+    This function returns the 'combined' image; it does not modify x.
+
     The width of the resulting image will be the same as the image in x:
     this function doesn't do padding, you need to call pad_combined_image.
     """
@@ -102,6 +105,7 @@ def convert_to_combined_image(x, c):
     object_class = x['object_class']
     num_outputs = c.num_classes + len(c.offsets)
     num_all_features = c.num_colors + 2 * num_outputs
+    # TODO: remove train_image_size.
     y = np.ndarray(
         shape=(num_all_features, c.train_image_size, c.train_image_size))
 
