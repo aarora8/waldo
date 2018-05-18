@@ -46,7 +46,7 @@ def scale_down_image_with_objects(image_with_objects, config, max_size):
 
     im = Image.fromarray(im_arr)
     sx = float(im.size[0])
-    sy = float(image.size[1])
+    sy = float(im.size[1])
     scale = 0
     if sy > sx:
         ny = max_size
@@ -57,7 +57,7 @@ def scale_down_image_with_objects(image_with_objects, config, max_size):
         scale = (1.0 * nx) / sx
         ny = scale * sy
 
-    resized_img = image.resize((int(nx), int(ny)))
+    resized_img = im.resize((int(nx), int(ny)))
     resized_img_arr = np.array(resized_img)
 
     objects = []
@@ -65,7 +65,7 @@ def scale_down_image_with_objects(image_with_objects, config, max_size):
         ordered_polygon_points = original_object['polygon']
         object = {}
         resized_pp = []
-        for point in ordered_polygon_points
+        for point in ordered_polygon_points:
             x, y = point
             new_x = int(x * scale)
             new_y = int(y * scale)
@@ -74,10 +74,10 @@ def scale_down_image_with_objects(image_with_objects, config, max_size):
         object['polygon'] = resized_pp
         objects.append(object)
 
-    image_with_objects = {
+    resized_image_with_objects = {
         'img': resized_img_arr,
         'objects': objects
     }
 
-    validate_image_with_objects(image_with_objects, config)
+    validate_image_with_objects(resized_image_with_objects, config)
 
