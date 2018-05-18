@@ -267,7 +267,7 @@ def main():
 
     splits_handle = open(args.data_splits, 'r')
     splits_data = splits_handle.read().strip().split('\n')
-    image_file = os.path.join(args.out_dir, 'images.txt')
+    image_file = os.path.join(args.out_dir, 'images.scp')
     image_fh = open(image_file, 'w', encoding='utf-8')
 
     data = []
