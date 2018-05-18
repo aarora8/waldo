@@ -81,3 +81,5 @@ def scale_down_image_with_objects(image_with_objects, config, max_size):
 
     validate_image_with_objects(resized_image_with_objects, config)
 
+    return resized_image_with_objects
+
