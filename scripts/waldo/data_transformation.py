@@ -3,7 +3,7 @@
 
 # Apache 2.0
 
-from waldo.data_types import *
+from waldo.scripts.waldo.data_types import *
 
 
 def randomly_crop_combined_image(combined_image, config,

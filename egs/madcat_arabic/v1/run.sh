@@ -2,7 +2,7 @@
 
 set -e
 stage=0
-nj=70
+nj=1
 download_dir1=/export/corpora/LDC/LDC2012T15/data
 download_dir2=/export/corpora/LDC/LDC2013T09/data
 download_dir3=/export/corpora/LDC/LDC2013T15/data
@@ -20,11 +20,11 @@ mkdir -p data/local/{train,test,dev}
 mkdir -p data/{train,test,dev}/masks
 data_splits_dir=data/download/data_splits
 
-if [ $stage -le 0 ]; then
-  echo "$0: Downloading data splits..."
-  echo "Date: $(date)."
-  local/download_data.sh --data_splits $data_splits_dir
-fi
+#if [ $stage -le 0 ]; then
+#  echo "$0: Downloading data splits..."
+#  echo "Date: $(date)."
+#  local/download_data.sh --data_splits $data_splits_dir
+#fi
 
 if [ $stage -le 0 ]; then
   for dataset in test dev train; do
