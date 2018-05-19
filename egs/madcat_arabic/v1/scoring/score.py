@@ -1,4 +1,3 @@
-
 import sys
 import argparse
 import os
@@ -11,9 +10,6 @@ parser.add_argument('--hypothesis', default='data/exp/', type=str,
 parser.add_argument('--reference', default='data/test', type=str,
                     help='reference directory of test data')
 args = parser.parse_args()
-
-# <DL_ZONE gedi_type="MADCAT-TOKEN" id="1" nextZoneID="2" col="1092" row="269" width="126" height="169"
-# segmentation="word" contents="俄" newline="TRUE" lineID="1"> </DL_ZONE
 
 
 def main():

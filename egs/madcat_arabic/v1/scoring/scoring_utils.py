@@ -1,20 +1,20 @@
 from collections import namedtuple
 from shapely.geometry.polygon import Polygon
 import numpy as np
-from PIL import Image
+
 
 Rectangle = namedtuple('Rectangle', 'xmin ymin xmax ymax')
 
 
 def get_score(reference_data, hypothesis_data):
 
-    validate_data(reference_data, hypothesis_data)
-    score = evaluate_data(reference_data, hypothesis_data)
+    _validate_data(reference_data, hypothesis_data)
+    score = _evaluate_data(reference_data, hypothesis_data)
 
     return score
 
 
-def evaluate_data(reference_data, hypothesis_data):
+def _evaluate_data(reference_data, hypothesis_data):
     perSampleMetrics = {}
     matchedSum = 0
     gt = reference_data
@@ -38,23 +38,23 @@ def evaluate_data(reference_data, hypothesis_data):
         pairs = []
         detMatchedNums = []
 
-        pointlist = get_pointlist(gt_file)
+        pointlist = _get_pointlist(gt_file)
         for n in range(len(pointlist)):
             points = pointlist[n]
             gtRect = Rectangle(*points)
-            gtPol = rectangle_to_polygon(gtRect)
-            gtPol = polygon_from_points(points)
+            gtPol = _rectangle_to_polygon(gtRect)
+            gtPol = _polygon_from_points(points)
             gtPols.append(gtPol)
             gtPolPoints.append(points)
 
         if result_file in subm:
 
-            pointlist = get_pointlist(subm_file)
+            pointlist = _get_pointlist(subm_file)
             for n in range(len(pointlist)):
                 points = pointlist[n]
                 detRect = Rectangle(*points)
-                detPol = rectangle_to_polygon(detRect)
-                detPol = polygon_from_points(points)
+                detPol = _rectangle_to_polygon(detRect)
+                detPol = _polygon_from_points(points)
                 detPols.append(detPol)
                 detPolPoints.append(points)
 
@@ -68,7 +68,7 @@ def evaluate_data(reference_data, hypothesis_data):
                     for detNum in range(len(detPols)):
                         pG = gtPols[gtNum]
                         pD = detPols[detNum]
-                        iouMat[gtNum, detNum] = get_intersection_over_union(pD, pG)
+                        iouMat[gtNum, detNum] = _get_intersection_over_union(pD, pG)
 
             for gtNum in range(len(gtPols)):
                 for detNum in range(len(detPols)):
@@ -95,6 +95,16 @@ def evaluate_data(reference_data, hypothesis_data):
         numGlobalCareGt += numGtCare
         numGlobalCareDet += numDetCare
 
+        perSampleMetrics[result_file] = {
+            'precision': precision,
+            'recall': recall,
+            'hmean': hmean,
+            'pairs': pairs,
+            'iouMat': [] if len(detPols) > 100 else iouMat.tolist(),
+            'gtPolPoints': gtPolPoints,
+            'detPolPoints': detPolPoints
+        }
+
     # Compute MAP and MAR
 
     methodRecall = 0 if numGlobalCareGt == 0 else float(matchedSum) / numGlobalCareGt
@@ -109,18 +119,18 @@ def evaluate_data(reference_data, hypothesis_data):
     return resDict
 
 
-def get_pointlist(gt_file):
+def _get_pointlist(gt_file):
     points = []
     return points
 
 
-def validate_data(reference_data, hypothesis_data):
+def _validate_data(reference_data, hypothesis_data):
     points = []
-    validate_clockwise_points(points)
+    _validate_clockwise_points(points)
     return
 
 
-def validate_clockwise_points(points):
+def _validate_clockwise_points(points):
     """
     Validates that the points that the 4 points that dlimite a polygon are in clockwise order.
     """
@@ -149,7 +159,7 @@ def validate_clockwise_points(points):
             "extending downwards.")
 
 
-def polygon_from_points(points):
+def _polygon_from_points(points):
     """
     Returns a Polygon object from a list of 8 points: x1,y1,x2,y2,x3,y3,x4,y4
     """
@@ -166,7 +176,7 @@ def polygon_from_points(points):
     return Polygon(pointMat)
 
 
-def rectangle_to_polygon(rect):
+def _rectangle_to_polygon(rect):
     resBoxes = np.empty([1, 8], dtype='int32')
     resBoxes[0, 0] = int(rect.xmin)
     resBoxes[0, 4] = int(rect.ymax)
@@ -182,20 +192,20 @@ def rectangle_to_polygon(rect):
     return Polygon(pointMat)
 
 
-def get_union(pD, pG):
+def _get_union(pD, pG):
     areaA = pD.area()
     areaB = pG.area()
-    return areaA + areaB - get_intersection(pD, pG)
+    return areaA + areaB - _get_intersection(pD, pG)
 
 
-def get_intersection_over_union(pD, pG):
+def _get_intersection_over_union(pD, pG):
     try:
-        return get_intersection(pD, pG) / get_union(pD, pG)
+        return _get_intersection(pD, pG) / _get_union(pD, pG)
     except:
         return 0
 
 
-def get_intersection(pD, pG):
+def _get_intersection(pD, pG):
     pInt = pD & pG
     if len(pInt) == 0:
         return 0
