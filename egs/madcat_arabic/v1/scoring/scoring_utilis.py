@@ -15,22 +15,17 @@ def get_score(reference_data, hypothesis_data):
 
 
 def evaluate_data(reference_data, hypothesis_data):
-    score = 0
+    perSampleMetrics = {}
+    matchedSum = 0
     gt = reference_data
     subm = hypothesis_data
 
     numGlobalCareGt = 0
     numGlobalCareDet = 0
 
-    arrGlobalConfidences = []
-    arrGlobalMatches = []
-
     for result_file in gt:
         gt_file = gt
         subm_file = subm
-        recall = 0
-        precision = 0
-        hmean = 0
         detMatched = 0
         iouMat = np.empty([1, 1])
 
@@ -40,19 +35,8 @@ def evaluate_data(reference_data, hypothesis_data):
         gtPolPoints = []
         detPolPoints = []
 
-        # Array of Ground Truth Polygons' keys marked as don't Care
-        gtDontCarePolsNum = []
-        # Array of Detected Polygons' matched with a don't Care GT
-        detDontCarePolsNum = []
-
         pairs = []
         detMatchedNums = []
-
-        arrSampleConfidences = []
-        arrSampleMatch = []
-        sampleAP = 0
-
-        evaluationLog = ""
 
         pointlist = get_pointlist(gt_file)
         for n in range(len(pointlist)):
@@ -73,17 +57,56 @@ def evaluate_data(reference_data, hypothesis_data):
                 detPol = polygon_from_points(points)
                 detPols.append(detPol)
                 detPolPoints.append(points)
-                if len(gtDontCarePolsNum) > 0:
-                    for dontCarePol in gtDontCarePolsNum:
-                        dontCarePol = gtPols[dontCarePol]
-                        intersected_area = get_intersection(dontCarePol, detPol)
-                        pdDimensions = detPol.area()
-                        precision = 0 if pdDimensions == 0 else intersected_area / pdDimensions
-                        if (precision > evaluationParams['AREA_PRECISION_CONSTRAINT']):
-                            detDontCarePolsNum.append(len(detPols) - 1)
-                            break
 
-    return score
+            if len(gtPols) > 0 and len(detPols) > 0:
+                # Calculate IoU and precision matrixs
+                outputShape = [len(gtPols), len(detPols)]
+                iouMat = np.empty(outputShape)
+                gtRectMat = np.zeros(len(gtPols), np.int8)
+                detRectMat = np.zeros(len(detPols), np.int8)
+                for gtNum in range(len(gtPols)):
+                    for detNum in range(len(detPols)):
+                        pG = gtPols[gtNum]
+                        pD = detPols[detNum]
+                        iouMat[gtNum, detNum] = get_intersection_over_union(pD, pG)
+
+            for gtNum in range(len(gtPols)):
+                for detNum in range(len(detPols)):
+                    if gtRectMat[gtNum] == 0 and detRectMat[detNum] == 0:
+                        if iouMat[gtNum, detNum] > 0.5:
+                            gtRectMat[gtNum] = 1
+                            detRectMat[detNum] = 1
+                            detMatched += 1
+                            pairs.append({'gt': gtNum, 'det': detNum})
+                            detMatchedNums.append(detNum)
+
+        numGtCare = len(gtPols)
+        numDetCare = len(detPols)
+        if numGtCare == 0:
+            recall = float(1)
+            precision = float(0) if numDetCare > 0 else float(1)
+        else:
+            recall = float(detMatched) / numGtCare
+            precision = 0 if numDetCare == 0 else float(detMatched) / numDetCare
+
+        hmean = 0 if (precision + recall) == 0 else 2.0 * precision * recall / (precision + recall)
+
+        matchedSum += detMatched
+        numGlobalCareGt += numGtCare
+        numGlobalCareDet += numDetCare
+
+    # Compute MAP and MAR
+
+    methodRecall = 0 if numGlobalCareGt == 0 else float(matchedSum) / numGlobalCareGt
+    methodPrecision = 0 if numGlobalCareDet == 0 else float(matchedSum) / numGlobalCareDet
+    methodHmean = 0 if methodRecall + methodPrecision == 0 else 2 * methodRecall * methodPrecision / (
+    methodRecall + methodPrecision)
+
+    methodMetrics = {'precision': methodPrecision, 'recall': methodRecall, 'hmean': methodHmean}
+
+    resDict = {'calculated': True, 'Message': '', 'method': methodMetrics, 'per_sample': perSampleMetrics}
+
+    return resDict
 
 
 def get_pointlist(gt_file):
@@ -178,23 +201,3 @@ def get_intersection(pD, pG):
         return 0
     return pInt.area()
 
-
-def compute_ap(confList, matchList, numGtCare):
-    correct = 0
-    AP = 0
-    if len(confList) > 0:
-        confList = np.array(confList)
-        matchList = np.array(matchList)
-        sorted_ind = np.argsort(-confList)
-        confList = confList[sorted_ind]
-        matchList = matchList[sorted_ind]
-        for n in range(len(confList)):
-            match = matchList[n]
-            if match:
-                correct += 1
-                AP += float(correct) / (n + 1)
-
-        if numGtCare > 0:
-            AP /= numGtCare
-
-    return AP
