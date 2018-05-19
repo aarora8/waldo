@@ -58,37 +58,6 @@ parser.add_argument('--padding', type=int, default=400,
 args = parser.parse_args()
 
 
-def pad_image(image):
-    """ Given an image, returns a padded image around the border.
-        This routine save the code from crashing if bounding boxes that are
-        slightly outside the page boundary.
-    Returns
-    -------
-    image: page image
-    """
-    offset = int(args.padding // 2)
-    padded_image = Image.new('L', (image.size[0] + int(args.padding), image.size[1] + int(args.padding)), "white")
-    padded_image.paste(im=image, box=(offset, offset))
-    return padded_image
-
-
-def update_minimum_bounding_box_input(bounding_box_input):
-    """ Given list of 2D points, returns list of 2D points shifted by an offset.
-    Returns
-    ------
-    points [(float, float)]: points, a list or tuple of 2D coordinates
-    """
-    updated_minimum_bounding_box_input = []
-    offset = int(args.padding // 2)
-    for point in bounding_box_input:
-        x, y = point
-        new_x = x + offset
-        new_y = y + offset
-        word_coordinate = (new_x, new_y)
-        updated_minimum_bounding_box_input.append(word_coordinate)
-
-    return updated_minimum_bounding_box_input
-
 
 def get_mask_from_page_image(image_file_name, objects, image_fh):
     """ Given a page image, extracts the page image mask from it.
@@ -98,12 +67,10 @@ def get_mask_from_page_image(image_file_name, objects, image_fh):
         madcat_file_path (string): complete path and name of the madcat xml file
                                       corresponding to the page image.
         """
-    im_wo_pad = Image.open(image_file_name)
-    im = pad_image(im_wo_pad)
+    im = Image.open(image_file_name)
     im_arr = np.array(im)
 
     config = CoreConfig()
-    config.padding = int(args.padding // 2)
 
     image_with_objects = {
         'img': im_arr,
@@ -132,14 +99,13 @@ def get_bounding_box(madcat_file_path):
     for node in zone:
         object = {}
         token_image = node.getElementsByTagName('token-image')
-        minimum_bounding_box_input = []
+        mbb_input = []
         for token_node in token_image:
             word_point = token_node.getElementsByTagName('point')
             for word_node in word_point:
                 word_coordinate = (int(word_node.getAttribute('x')), int(word_node.getAttribute('y')))
-                minimum_bounding_box_input.append(word_coordinate)
-        updated_mbb_input = update_minimum_bounding_box_input(minimum_bounding_box_input)
-        points = get_minimum_bounding_box(updated_mbb_input)
+                mbb_input.append(word_coordinate)
+        points = get_minimum_bounding_box(mbb_input)
         points_ordered = compute_hull(points)
         object['polygon'] = points_ordered
         objects.append(object)
