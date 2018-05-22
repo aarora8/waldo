@@ -17,21 +17,21 @@ parser = argparse.ArgumentParser(description="Creates line images from page imag
                                  " data/LDC2013T09 data/LDC2013T15 data/madcat.train.raw.lineid "
                                  " data/local/lines ",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('database_path1', type=str,
+parser.add_argument('--database_path1', type=str,
                     help='Path to the downloaded madcat data directory 1')
-parser.add_argument('database_path2', type=str,
+parser.add_argument('--database_path2', type=str,
                     help='Path to the downloaded madcat data directory 2')
-parser.add_argument('database_path3', type=str,
+parser.add_argument('--database_path3', type=str,
                     help='Path to the downloaded madcat data directory 3')
-parser.add_argument('data_splits', type=str,
+parser.add_argument('--data_splits', type=str,
                     help='Path to file that contains the train/test/dev split information')
-parser.add_argument('out_dir', type=str,
+parser.add_argument('--out_dir', type=str,
                     help='directory location to write output files')
-parser.add_argument('writing_condition1', type=str,
+parser.add_argument('--writing_condition1', type=str,
                     help='Path to the downloaded (and extracted) writing conditions file 1')
-parser.add_argument('writing_condition2', type=str,
+parser.add_argument('--writing_condition2', type=str,
                     help='Path to the downloaded (and extracted) writing conditions file 2')
-parser.add_argument('writing_condition3', type=str,
+parser.add_argument('--writing_condition3', type=str,
                     help='Path to the downloaded (and extracted) writing conditions file 3')
 parser.add_argument('--max-image-size', type=int, default=512,
                     help='scales down an image if the length of its largest'
@@ -99,6 +99,16 @@ def check_writing_condition(wc_dict, base_name):
 
 
 def main():
+
+    args.database_path1 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2012T15"
+    args.database_path2 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T09"
+    args.database_path3 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T15"
+    args.data_splits = "/Users/ashisharora/google_Drive/madcat_arabic/madcat.dev.raw.lineid"
+    args.out_dir = "/Users/ashisharora/google_Drive/madcat_arabic/masks"
+
+    args.writing_condition1 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2012T15/writing_conditions.tab"
+    args.writing_condition2 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T09/writing_conditions.tab"
+    args.writing_condition3 = "/Users/ashisharora/google_Drive/madcat_arabic/LDC2013T15/writing_conditions.tab"
 
     wc_dict1 = parse_writing_conditions(args.writing_condition1)
     wc_dict2 = parse_writing_conditions(args.writing_condition2)

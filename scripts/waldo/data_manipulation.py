@@ -7,8 +7,8 @@
 import numpy as np
 from PIL import Image, ImageDraw
 from math import hypot
-from waldo.data_types import *
-from waldo.mar_utils import get_mar
+from waldo.scripts.waldo.data_types import *
+from waldo.scripts.waldo.mar_utils import get_mar
 
 
 def convert_to_mask(x, c):
@@ -27,15 +27,15 @@ def convert_to_mask(x, c):
     object_id = 0
     y = dict()
     y['img'] = im
-    mask_img = Image.new('L', (im.shape[1], im.shape[0]), 0)
+    mask_img = Image.new('L', (im.shape[1], im.shape[0]), 255)
     mask_img_arr = np.array(mask_img)
 
     object_class = list()
     object_class.append(0)
     for object in x['objects']:
         ordered_polygon_points = object['polygon']
-        object_id += 1
-        temp_img = Image.new('L', (im.shape[1], im.shape[0]), 0)
+        object_id += 10
+        temp_img = Image.new('L', (im.shape[1], im.shape[0]), 255)
         ImageDraw.Draw(temp_img).polygon(
             ordered_polygon_points, fill=object_id)
         temp_img_arr = np.array(temp_img)
@@ -47,10 +47,20 @@ def convert_to_mask(x, c):
         object_class.append(1)
     y['mask'] = mask_img_arr
 
+
     if 'object_class' in x:
         y['object_class'] = x['object_class']
     else:
         y['object_class'] = object_class
+
+    print(y['img'].shape[0])
+    print(y['img'].shape[1])
+    print(y['mask'].shape[0])
+    print(y['mask'].shape[1])
+    im = Image.fromarray(y['img'])
+    im.show()
+    im = Image.fromarray(y['mask'])
+    im.show()
 
     validate_image_with_mask(y, c)
     return y
