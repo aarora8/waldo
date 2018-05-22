@@ -39,12 +39,12 @@ EOF
 EOF
 fi
 
-
+out_dir=/Users/ashisharora/google_Drive/madcat_arabic/
 if [ $stage -le 2 ]; then
   # training the network
   echo "training the network....."
-  $cmd --gpu 1 --mem 20G $dir/train.log limit_num_gpus.sh local/train.py \
-       --train-dir data \
+  local/train.py \
+       --train-dir $out_dir \
        --batch-size $batch_size \
        --train-image-size 128 \
        --epochs $epochs \
