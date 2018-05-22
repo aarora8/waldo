@@ -24,6 +24,7 @@ mkdir -p data/{train,test,dev}
 
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 
+
 . ./scripts/parse_options.sh
 
 #if [ -d $data_splits_dir ]; then

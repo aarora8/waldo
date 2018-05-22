@@ -7,7 +7,6 @@ stage=0
 
 . ./scripts/parse_options.sh  # e.g. this parses the --stage option if supplied.
 
-
 . ./cmd.sh ## You'll want to change cmd.sh to something that will work on your system.
            ## This relates to the queue.
 
