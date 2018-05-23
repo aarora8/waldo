@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 
-from waldo.data_types import *
+from waldo.scripts.waldo.data_types import *
 
 
 def visualize_mask(x, c, transparency=0.3):
