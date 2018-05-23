@@ -40,6 +40,7 @@ fi
 
 
 echo "Date: $(date)."
+mkdir -p data/{train,test,dev}/numpy_arrays
 if [ $stage -le 0 ]; then
   for dataset in test dev train; do
   dataset_file=$data_splits_dir/madcat.$dataset.raw.lineid
