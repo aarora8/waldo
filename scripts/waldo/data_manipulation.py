@@ -7,8 +7,8 @@
 import numpy as np
 from PIL import Image, ImageDraw
 from math import hypot
-from waldo.scripts.waldo.data_types import *
-from waldo.scripts.waldo.mar_utils import get_mar
+from waldo.data_types import *
+from waldo.mar_utils import get_mar
 
 
 def convert_to_mask(x, c):
@@ -52,15 +52,6 @@ def convert_to_mask(x, c):
         y['object_class'] = x['object_class']
     else:
         y['object_class'] = object_class
-
-    print(y['img'].shape[0])
-    print(y['img'].shape[1])
-    print(y['mask'].shape[0])
-    print(y['mask'].shape[1])
-    im = Image.fromarray(y['img'])
-    im.show()
-    im = Image.fromarray(y['mask'])
-    im.show()
 
     validate_image_with_mask(y, c)
     return y

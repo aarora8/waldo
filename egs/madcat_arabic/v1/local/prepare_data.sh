@@ -17,28 +17,25 @@ data_splits_dir=data/download/data_splits
 writing_condition1=/export/corpora/LDC/LDC2012T15/docs/writing_conditions.tab
 writing_condition2=/export/corpora/LDC/LDC2013T09/docs/writing_conditions.tab
 writing_condition3=/export/corpora/LDC/LDC2013T15/docs/writing_conditions.tab
-data_splits=/Users/ashisharora/google_Drive/madcat_arabic/madcat.dev.raw.lineid
-out_dir=/Users/ashisharora/google_Drive/madcat_arabic/masks
 
 mkdir -p data/{train,test,dev}
 
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 
+. ./scripts/parse_options.sh # e.g. this parses the --stage option if supplied.
 
-. ./scripts/parse_options.sh
-
-#if [ -d $data_splits_dir ]; then
-#  echo "$0: Not downloading the data splits as it is already there."
-#else
-#  if [ ! -f $data_splits_dir/madcat.train.raw.lineid ]; then
-#    mkdir -p $data_splits_dir
-#    echo "$0: Downloading the data splits..."
-#    wget -P $data_splits_dir $train_split_url || exit 1;
-#    wget -P $data_splits_dir $test_split_url || exit 1;
-#    wget -P $data_splits_dir $dev_split_url || exit 1;
-#  fi
-#  echo "$0: Done downloading the data splits"
-#fi
+if [ -d $data_splits_dir ]; then
+  echo "$0: Not downloading the data splits as it is already there."
+else
+  if [ ! -f $data_splits_dir/madcat.train.raw.lineid ]; then
+    mkdir -p $data_splits_dir
+    echo "$0: Downloading the data splits..."
+    wget -P $data_splits_dir $train_split_url || exit 1;
+    wget -P $data_splits_dir $test_split_url || exit 1;
+    wget -P $data_splits_dir $dev_split_url || exit 1;
+  fi
+  echo "$0: Done downloading the data splits"
+fi
 
 
 
@@ -48,7 +45,7 @@ if [ $stage -le 0 ]; then
   for dataset in test dev train; do
   dataset_file=$data_splits_dir/madcat.$dataset.raw.lineid
   local/process_data.py $download_dir1 $download_dir2 $download_dir3 \
-      $data_splits data/$dataset $writing_condition1 $writing_condition2 \
+      $dataset_file data/$dataset $writing_condition1 $writing_condition2 \
       $writing_condition3
   done
 fi
