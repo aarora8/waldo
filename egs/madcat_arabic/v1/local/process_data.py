@@ -11,6 +11,7 @@ import argparse
 import os
 import torch
 from create_mask_from_page_image import get_mask_from_page_image
+from waldo.data_io import DataSaver
 
 parser = argparse.ArgumentParser(description="Creates line images from page image",
                                  epilog="E.g.  " + sys.argv[0] + "  data/LDC2012T15"
@@ -90,7 +91,7 @@ def check_writing_condition(wc_dict, base_name):
     Returns
     (bool): True if writing condition matches.
     """
-    return True
+    #return True
     writing_condition = wc_dict[base_name].strip()
     if writing_condition != 'IUC':
         return False
@@ -109,7 +110,7 @@ def main():
 
     prev_base_name = ''
     data = []
-    output_path = args.out_dir + '.pth.tar'
+    train_saver = DataSaver(args.out_dir)
     for line in splits_data:
         base_name = os.path.splitext(os.path.splitext(line.split(' ')[0])[0])[0]
         if prev_base_name != base_name:
@@ -119,8 +120,7 @@ def main():
                 continue
             if madcat_file_path is not None:
                 y = get_mask_from_page_image(madcat_file_path, image_file_path, args.max_image_size)
-                data.append(y)
-    torch.save(data, output_path)
+                train_saver.write_image(base_name, y)
 
 if __name__ == '__main__':
     main()

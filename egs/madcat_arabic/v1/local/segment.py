@@ -20,7 +20,7 @@ parser.add_argument('model', type=str,
                     help='path to final model')
 parser.add_argument('--dir', default='exp/unet', type=str,
                     help='directory to store segmentation results')
-parser.add_argument('--train-dir', default='./data/dev.pth.tar', type=str,
+parser.add_argument('--train-dir', default='./data/train/', type=str,
                     help='Path of processed validation data')
 parser.add_argument('--train-image-size', default=128, type=int,
                     help='The size of the parts of training images that we'
@@ -91,8 +91,7 @@ def main():
 
     model.eval()  # convert the model into evaluation mode
 
-    val_data = args.train_dir + '/' + 'dev.pth.tar'
-
+    val_data = './data/dev/'
     testset = Dataset_madcatar(val_data, c_config, args.train_image_size)
     print('Total samples in the test set: {0}'.format(len(testset)))
 
