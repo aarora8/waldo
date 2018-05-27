@@ -3,15 +3,10 @@ import numpy as np
 
 
 def _evaluate_data(ref_file, hyp_file):
-
-    hyp_matched = 0
-    iou_mat = np.empty([1, 1])
     ref_pols = []
     hyp_pols = []
     ref_pol_points = []
     hyp_pol_points = []
-    pairs = []
-
     pointlist = _get_pointlist(ref_file)
     for n in range(len(pointlist)):
         points = pointlist[n]
@@ -37,6 +32,9 @@ def _evaluate_data(ref_file, hyp_file):
                 polygon_hyp = hyp_pols[hyp_index]
                 iou_mat[ref_index, hyp_index] = _get_intersection_over_union(polygon_hyp, polygon_ref)
 
+    hyp_matched = 0
+    iou_mat = np.empty([1, 1])
+    pairs = []
     for ref_index in range(len(ref_pols)):
         for hyp_index in range(len(hyp_pols)):
             if ref_rect_mat[ref_index] == 0 and hyp_rect_mat[hyp_index] == 0:
