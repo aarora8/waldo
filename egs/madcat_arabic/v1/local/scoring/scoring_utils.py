@@ -21,7 +21,7 @@ def _evaluate_data(ref_file, hyp_file):
         hyp_pols.append(hyp_polygon)
         hyp_pol_points.append(points)
 
-    iou_mat = np.empty([len(ref_pols), len(hyp_pols)])
+    iou_mat = np.zeros([len(ref_pols), len(hyp_pols)])
     ref_rect_mat = np.zeros(len(ref_pols), np.int8)
     hyp_rect_mat = np.zeros(len(hyp_pols), np.int8)
     for ref_index in range(len(ref_pols)):
@@ -77,23 +77,24 @@ def _get_pointlist(file):
 
 
 def _get_union(hyp, ref):
-    area_a = hyp.area()
-    area_b = ref.area()
+    area_a = hyp.area
+    area_b = ref.area
     return area_a + area_b - _get_intersection(hyp, ref)
 
 
 def _get_intersection_over_union(hyp, ref):
     try:
-        return _get_intersection(hyp, ref) / _get_union(hyp, ref)
+        intersection = _get_intersection(hyp, ref)
+        union = _get_union(hyp, ref)
+        return intersection / union
     except:
         return 0
 
 
 def _get_intersection(hyp, ref):
     p_int = hyp & ref
-    if len(p_int) == 0:
-        return 0
-    return p_int.area()
+    area = p_int.area
+    return area
 
 
 def _polygon_from_points(points):
