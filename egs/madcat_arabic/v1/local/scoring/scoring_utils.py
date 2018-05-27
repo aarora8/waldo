@@ -113,42 +113,6 @@ def _polygon_from_points(points):
     return Polygon(point_mat)
 
 
-
-def _validate_data(reference_data, hypothesis_data):
-    points = []
-    _validate_clockwise_points(points)
-    return
-
-
-def _validate_clockwise_points(points):
-    """
-    Validates that the points that the 4 points that dlimite a polygon are in clockwise order.
-    """
-    if len(points) != 8:
-        raise Exception("Points list not valid." + str(len(points)))
-
-    point = [
-        [int(points[0]), int(points[1])],
-        [int(points[2]), int(points[3])],
-        [int(points[4]), int(points[5])],
-        [int(points[6]), int(points[7])]
-    ]
-    edge = [
-        (point[1][0] - point[0][0]) * (point[1][1] + point[0][1]),
-        (point[2][0] - point[1][0]) * (point[2][1] + point[1][1]),
-        (point[3][0] - point[2][0]) * (point[3][1] + point[2][1]),
-        (point[0][0] - point[3][0]) * (point[0][1] + point[3][1])
-    ]
-
-    summatory = edge[0] + edge[1] + edge[2] + edge[3]
-    if summatory > 0:
-        raise Exception(
-            "Points are not clockwise. The coordinates of bounding quadrilaterals have to be given in clockwise order. "
-            "Regarding the correct interpretation of 'clockwise' remember that the image coordinate system used is the "
-            "standard one, with the image origin at the upper left, the X axis extending to the right and Y axis "
-            "extending downwards.")
-
-
 def get_score(reference_data, hypothesis_data):
 
     _validate_data(reference_data, hypothesis_data)
