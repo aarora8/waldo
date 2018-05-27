@@ -113,10 +113,6 @@ def _polygon_from_points(points):
     return Polygon(point_mat)
 
 
-def get_score(reference_data, hypothesis_data):
+def get_score(ref_file, hyp_file):
 
-    _validate_data(reference_data, hypothesis_data)
-    score = _evaluate_data(reference_data, hypothesis_data)
-
-    return score
-
+    _evaluate_data(ref_file, hyp_file)

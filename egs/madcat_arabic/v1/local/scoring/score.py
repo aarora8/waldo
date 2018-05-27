@@ -18,7 +18,7 @@ def main():
     hypothesis_handle = open(args.hypothesis, 'r')
     hypothesis_data = hypothesis_handle.read().strip().split('\n')
 
-    score = get_score(reference_data, hypothesis_data)
+    get_score(reference_data, hypothesis_data)
 
 if __name__ == '__main__':
       main()
