@@ -6,8 +6,8 @@ import os
 import torch
 import numpy as np
 from torch.utils.data import Dataset
-from waldo.data_manipulation import convert_to_combined_image
-from waldo.data_transformation import randomly_crop_combined_image
+from waldo.scripts.waldo.data_manipulation import convert_to_combined_image
+from waldo.scripts.waldo.data_transformation import randomly_crop_combined_image
 
 
 class DataSaver:

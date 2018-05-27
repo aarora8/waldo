@@ -2,7 +2,7 @@
 
 
 # Apache 2.0
-from waldo.data_types import *
+from waldo.scripts.waldo.data_types import *
 from PIL import Image
 import numpy as np
 

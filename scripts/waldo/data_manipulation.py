@@ -7,8 +7,8 @@
 import numpy as np
 from PIL import Image, ImageDraw
 from math import hypot
-from waldo.data_types import *
-from waldo.mar_utils import get_mar
+from waldo.scripts.waldo.data_types import *
+from waldo.scripts.waldo.mar_utils import get_mar
 
 
 def convert_to_mask(x, c):
