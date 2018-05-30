@@ -18,7 +18,7 @@ def randomly_crop_combined_image(combined_image, config,
     'combined_image'.
     """
     validate_combined_image(combined_image, config)
-
+    return combined_image
     n_channels, height, width = combined_image.shape
 
     # it has been made a square image and we only consider one side
