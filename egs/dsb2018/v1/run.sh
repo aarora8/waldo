@@ -31,13 +31,24 @@ if [ $stage -le 1 ]; then
   local/run_unet.sh --dir $dir --epochs $epochs --depth $depth
 fi
 
+logdir=$dir/segment/log
+nj=10
 if [ $stage -le 2 ]; then
     echo "doing segmentation...."
-  local/segment.py \
-    --train-image-size 128 \
-    --model model_best.pth.tar \
-    --test-data data/stage1_test \
-    --dir $dir/segment \
-    --csv sub-dsbowl2018.csv
+  $cmd JOB=1:$nj $logdir/segment.JOB.log local/segment.py \
+       --train-image-size 128 \
+       --model model_best.pth.tar \
+       --test-data data/stage1_test \
+       --dir $dir/segment \
+       --csv sub-dsbowl2018.csv \
+       --job JOB --num-jobs $nj
 
+fi
+
+if [ $stage -le 3 ]; then
+  echo "doing evaluation..."
+  local/scoring.py \
+    --ground-truth data/download/stage1_solution.csv \
+    --predict $dir/segment/sub-dsbowl2018.csv \
+    --result $dir/segment/result.txt
 fi

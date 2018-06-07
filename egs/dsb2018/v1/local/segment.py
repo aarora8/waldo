@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import torch
+import csv
 import argparse
 import os
 import random
@@ -8,8 +9,6 @@ import numpy as np
 import scipy.misc
 from models.Unet import UNet
 from waldo.segmenter import ObjectSegmenter, SegmenterOptions
-import csv
-import scipy
 from skimage.transform import resize
 from waldo.core_config import CoreConfig
 from waldo.data_visualization import visualize_mask
@@ -38,8 +37,17 @@ parser.add_argument('--object-merge-factor', type=float, default=None,
 parser.add_argument('--same-different-bias', type=float, default=0.0,
                     help='Bias for same/different probs in the segmentation '
                     'algorithm.')
+parser.add_argument('--merge-logprob-bias', type=float, default=0.0,
+                    help='A bias that is added to merge logprobs in the '
+                    'segmentation algorithm.')
+parser.add_argument('--prune-threshold', type=float, default=0.0,
+                    help='Threshold used in the pruning step of the '
+                    'segmentation algorithm. Higher values --> more pruning.')
 parser.add_argument('--csv', type=str, default='sub-dsbowl2018.csv',
                     help='Csv filename as the final submission file')
+parser.add_argument('--job', type=int, default=0, help='job id')
+parser.add_argument('--num-jobs', type=int, default=1,
+                    help='number of parallel jobs')
 random.seed(0)
 np.random.seed(0)
 
@@ -91,7 +99,8 @@ def main():
     else:
         print("=> no checkpoint found at '{}'".format(model_path))
 
-    testset = WaldoTestset(args.test_data, args.train_image_size)
+    testset = WaldoTestset(args.test_data, args.train_image_size,
+                           job=args.job, num_jobs=args.num_jobs)
     print('Total samples in the test set: {0}'.format(len(testset)))
 
     dataloader = torch.utils.data.DataLoader(
@@ -132,7 +141,8 @@ def segment(dataloader, segment_dir, model, core_config):
         if args.object_merge_factor is None:
             args.object_merge_factor = 1.0 / len(offset_list)
             segmenter_opts = SegmenterOptions(same_different_bias=args.same_different_bias,
-                                              object_merge_factor=args.object_merge_factor)
+                                              object_merge_factor=args.object_merge_factor,
+                                              merge_logprob_bias=args.merge_logprob_bias)
         seg = ObjectSegmenter(class_pred[0].detach().numpy(),
                               adj_pred[0].detach().numpy(),
                               num_classes, offset_list,
@@ -200,8 +210,7 @@ def make_submission(segment_dir, csvname):
                 image_id = id.split('.')[0]
                 for line in rlefile:
                     line = line.strip()
-                    pixels = line.split(' ')
-                    csv_writer.writerow([image_id] + pixels)
+                    csv_writer.writerow([image_id] + [line])
 
     print('Saved to {}'.format(csv_path))
 

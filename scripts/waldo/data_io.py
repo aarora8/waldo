@@ -15,6 +15,7 @@ class DataSaver:
     def __init__(self, dir, cfg, train=True):
         self.dir = dir
         self.cfg = cfg
+        self.train = train
         if train:
             self.suffixes = ['img', 'mask', 'object_class']
         else:
@@ -136,25 +137,35 @@ class WaldoDataset(Dataset):
 
 
 class WaldoTestset(Dataset):
-    def __init__(self, dir, scale_size, cache=True):
+    def __init__(self, dir, scale_size=0, job=0, num_jobs=1, cache=True):
         self.dir = dir
         self.scale_size = scale_size
         self.original_sizes = []
         self.cache = cache
+        assert job <= num_jobs
+        self.job = job
+        self.num_jobs = num_jobs
         self.data = []
         with open(self.dir + '/' + 'image_ids.txt', 'r') as ids_file:
             self.ids = ids_file.readlines()
         self.ids = [id.strip() for id in self.ids]
+        # split the data if there are multiple jobs (threads)
+        if self.job > 0:
+            id_array = np.array(self.ids)
+            self.ids = np.array_split(id_array, self.num_jobs)[self.job - 1]
         self.cache = cache
         if self.cache:
             for id in self.ids:
                 img_array = self.__load_data(id)
                 h, w, c = img_array.shape
                 self.original_sizes.append((h, w))
-                scaled_img = resize(
-                    img_array, (self.scale_size, self.scale_size),
-                    preserve_range=True, mode='reflect')
-                self.data.append(scaled_img)
+                if self.scale_size == 0:
+                    self.data.append(img_array)
+                else:
+                    scaled_img = resize(
+                        img_array, (self.scale_size, self.scale_size),
+                        preserve_range=True, mode='reflect')
+                    self.data.append(scaled_img)
 
     def __load_data(self, id):
         path = os.path.join(self.dir, 'img')
@@ -163,7 +174,7 @@ class WaldoTestset(Dataset):
 
     def __getitem__(self, index):
         """ This function is called when we use iter (e.g. dataloader) to load data from
-            the dataset. 
+            the dataset.
             It returns:
                img_tensor: resized image
                size: image original size for future recovering reason
@@ -177,8 +188,9 @@ class WaldoTestset(Dataset):
             img = self.__load_data(id)
             h, w, c = img.shape
             size = (h, w)
-            img = resize(img, (self.scale_size, self.scale_size),
-                         preserve_range=True)
+            if self.scale_size != 0:
+                img = resize(img, (self.scale_size, self.scale_size),
+                             preserve_range=True)
 
         # convert image value range from (0, 255) unit8 to (0, 1) float
         img = np.moveaxis(img, -1, 0)

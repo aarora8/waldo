@@ -50,8 +50,6 @@ parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
                     help='weight decay (default: 5e-4)')
 parser.add_argument('--train-dir', default='data', type=str,
                     help='Directory of processed training and validation data')
-parser.add_argument('--test-dir', default='data/test', type=str,
-                    help='Directory of processed test data')
 parser.add_argument('--tensorboard',
                     help='Log progress to TensorBoard', action='store_false')
 parser.add_argument('--core-config', default='', type=str,
@@ -111,11 +109,13 @@ def main():
     train_data = args.train_dir + '/train'
     val_data = args.train_dir + '/dev'
 
-    trainset = WaldoDataset(train_data, c_config, args.train_image_size)
+    trainset = WaldoDataset(train_data, c_config, args.train_image_size, crop=False)
+    #trainset = WaldoDataset(train_data, c_config, args.train_image_size)
     trainloader = torch.utils.data.DataLoader(
         trainset, num_workers=4, batch_size=args.batch_size, shuffle=True)
 
-    valset = WaldoDataset(val_data, c_config, args.train_image_size)
+    valset = WaldoDataset(val_data, c_config, args.train_image_size, crop=False)
+    #valset = WaldoDataset(val_data, c_config, args.train_image_size)
     valloader = torch.utils.data.DataLoader(
         valset, num_workers=4, batch_size=args.batch_size)
 
@@ -162,18 +162,23 @@ def main():
         val_loss = Validate(valloader, model, epoch)
         is_best = val_loss < best_loss
         best_loss = min(val_loss, best_loss)
+        if is_best:
+            best_epoch = epoch
         save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
             'best_prec1': best_loss,
         }, is_best)
+        # visualize some example outputs
+        outdir = '{}/imgs'.format(args.dir)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        outdir = '{}/imgs/imgs_{}'.format(args.dir, epoch)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        sample(model, valloader, outdir, c_config)
     print('Best validation loss: ', best_loss)
-
-    # visualize some example outputs
-    outdir = '{}/imgs'.format(args.dir)
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-    sample(model, valloader, outdir, c_config)
+    print("Best epoch number: {}".format(best_epoch))
 
 
 def Train(trainloader, model, optimizer, epoch):
@@ -192,7 +197,6 @@ def Train(trainloader, model, optimizer, epoch):
         output = model(input)
         # class_pred = o[:, :num_classes, :, :]
         # bound_pred = o[:, num_classes:, :, :]
-        # TODO. Treat class label and bound label equally by now
         target = torch.cat((class_label, bound), 1)
         loss_fn = torch.nn.BCELoss()
         loss = loss_fn(output, target)
@@ -234,7 +238,6 @@ def Validate(validateloader, model, epoch):
             class_label = class_label.cuda(async=True)
             output = model(input)
 
-            # TODO. Treat class label and bound label equally by now
             target = torch.cat((class_label, bound), 1)
             loss_fn = torch.nn.BCELoss()
             loss = loss_fn(output, target)
@@ -295,7 +298,7 @@ def soft_dice_loss(inputs, targets):
 
 
 def adjust_learning_rate(optimizer, epoch):
-    """Sets the learning rate to the initial LR divided by 5 at 60th, 120th and 160th epochs"""
+    """Sets the learning rate to the initial LR divided by 5 at 60th and 100th epochs"""
     lr = args.lr * ((0.2 ** int(epoch >= 60)) *
                     (0.2 ** int(epoch >= 100)))
     # log to TensorBoard
